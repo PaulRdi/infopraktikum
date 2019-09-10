@@ -1,0 +1,10 @@
+[
+  {
+    "type": "Monster",
+    "attributes": 
+    {
+        "CombatValue": "Integer",
+		"OtherStuff": "Integer",
+    }
+  }
+]
