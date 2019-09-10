@@ -13,6 +13,8 @@ public class EmguUI : MonoBehaviour
     [SerializeField] Button generateButton, saveButton;
     [SerializeField] string path;
     [SerializeField] string outputPath;
+    [SerializeField] Canvas canvas;
+    [SerializeField] Camera camera;
 
     byte[,,] currentBytes;
     Mat currentEmguImage;
@@ -21,11 +23,53 @@ public class EmguUI : MonoBehaviour
     Image<Bgr, byte> original;
     Image<Bgr, byte> testImage0;
     Image<Bgr, byte> testImage1;
+
+    Vector2 markStartPos;
+    GameObject selectionObject;
+
     private void Awake()
     {
         generateButton.onClick.AddListener(Generate);
         saveButton.onClick.AddListener(Save);
 
+    }
+    private void Update()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            markStartPos = GetTransformedMousePos();
+            selectionObject = new GameObject("selection", typeof(RectTransform), typeof(CanvasRenderer));
+            selectionObject.AddComponent<Image>().color = new Color(1,1,1,.3f);
+            RectTransform rt = selectionObject.GetComponent<RectTransform>();
+            rt.pivot = new Vector2(0, 0);
+            rt.position = markStartPos;
+            selectionObject.transform.SetParent(canvas.transform);
+        }
+    }
+    private void LateUpdate()
+    {
+
+        
+        if (Input.GetMouseButton(0))
+        {
+            RectTransform trans = selectionObject.GetComponent<RectTransform>();
+            //trans.position = canvas.transform.worldToLocalMatrix * selectRect.position;
+            Vector2 transformedMousePos = GetTransformedMousePos();
+            Vector2 size = (Vector2)(transformedMousePos - markStartPos);
+            trans.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Mathf.Abs(size.x));
+            trans.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.Abs(size.y));
+            trans.localScale = new Vector2(Mathf.Sign(size.x), Mathf.Sign(size.y));
+        }
+        else if (Input.GetMouseButtonUp(0))
+        {
+            Destroy(selectionObject);
+        }
+    }
+
+    private Vector3 GetTransformedMousePos()
+    {
+        Vector3 mousePos = Input.mousePosition;
+        return mousePos;
     }
 
     private void Save()
@@ -47,7 +91,7 @@ public class EmguUI : MonoBehaviour
         //ExtractDamagePoints();
         //processor.DrawGrid(40, 3);
         //TestCustomFloodfill();
-        processor.FindTopLeftPointByFloodfill();
+        //processor.FindTopLeftPointByFloodfill();
         //processor.FindTopLeftPointBySweepline();
         Display(processor.GetTex());
     }
