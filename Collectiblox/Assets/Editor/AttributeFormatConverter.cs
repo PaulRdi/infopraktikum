@@ -20,7 +20,7 @@ namespace Collectiblox
         {
             AttributeFormat output = new AttributeFormat();
             JToken obj = JToken.Load(reader);
-            output.type = serializer.Deserialize<CardType>(obj["type"].CreateReader());
+            output.type = serializer.Deserialize<string>(obj["type"].CreateReader());
             output.nameToType = new Dictionary<string, AttributeType>();
             JObject attributes = JObject.Load(obj["attributes"].CreateReader());
             foreach(JProperty property in attributes.Properties())

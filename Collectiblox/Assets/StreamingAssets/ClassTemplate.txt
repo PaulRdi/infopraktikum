@@ -1,0 +1,9 @@
+﻿using UnityEngine;
+using System;
+
+namespace Collectiblox {
+    public class ##CLASSNAME## 
+    {
+	##PROPERTIES##
+    }
+}
