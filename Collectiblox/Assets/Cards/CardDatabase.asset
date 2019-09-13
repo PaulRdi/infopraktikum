@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: CardDatabase
   m_EditorClassIdentifier: 
   cards:
-  - {fileID: 11400000, guid: 9cd67ad1698b65e41b4e9a4f7f2dd474, type: 2}
-  - {fileID: 11400000, guid: e53fe511afc74344faaf8e388e59d839, type: 2}
-  - {fileID: 11400000, guid: c7acdba231e026f479cb523163d14435, type: 2}
+  - {fileID: 11400000, guid: 4b5982d2932f09a4c89dfbbeeeae59aa, type: 2}
+  - {fileID: 11400000, guid: 430d7d0c80d42ee44bcc4e915a6eb1f5, type: 2}
+  - {fileID: 11400000, guid: 3af34766e89eb584db0b2ad91a0008c3, type: 2}
+  - {fileID: 11400000, guid: fa8d00143c5879443bd90b99cbba9fa2, type: 2}
+  - {fileID: 11400000, guid: e572f2cd0669c3a409d609cdaadfd83a, type: 2}

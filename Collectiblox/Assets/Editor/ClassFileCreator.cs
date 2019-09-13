@@ -88,19 +88,16 @@ namespace Collectiblox
             return typeBuilder;
         }
         //https://forum.unity.com/threads/how-to-create-c-files-as-editor-extension.434606/
-        public static void CreateClassFile(AttributeFormat format, Type parent)
+        public static void CreateClassFile(AttributeFormat format, Type parent, bool force = false)
         {
             string[] guids = Selection.assetGUIDs;
             if (guids.Length == 0)
                 return;
 
-        
-
             string classname = char.ToUpper(format.type[0]) + format.type.Substring(1);
 
-            if (Type.GetType(classname) != null)
+            if (Type.GetType(classname) != null && !force)
                 throw new System.Exception("type already exists. Cannot create file");
-
 
             string template = File.ReadAllText(Application.streamingAssetsPath + "/ClassTemplate.txt");
             string relativePath = "/Scripts/Model/"+classname+".cs";
@@ -162,14 +159,24 @@ namespace Collectiblox
 
         private static void AddPropertyToString(ref string output, string propertyName, Type type)
         {
-            output += "\n";
-            string pn = char.ToUpper(propertyName[0]) + propertyName.Substring(1);
-            string fn = char.ToLower(propertyName[0]) + propertyName.Substring(1);
-            output += "\t\tpublic " + type.Name + " " + pn + " {\n" +
-                "\t\t\tget { return " + fn + ";" + "}\n" +
+            string pn = char.ToLower(propertyName[0]) + propertyName.Substring(1);
+            string fn = "_" + pn;
+            output += "\t\tpublic " + type.Name + " " + pn + "{\n" +
+                "\t\t\tget { return " + fn + ";" + "}\n" + 
                 "\t\t}\n";
             output += "\t\t[SerializeField]\n";
             output += "\t\tprivate " + type.Name + " " + fn + ";\n";
+        }
+
+        [MenuItem("Cards/Update Card Classes")]
+        static void UpdateClasses()
+        {
+            AttributeFormats formats = AttributeFormats.Load();
+            foreach (AttributeFormat format in formats)
+            {
+                CreateClassFile(format, null, true);
+            }
+
         }
     }
 }

@@ -6,10 +6,16 @@
         "CombatValue": "Integer",
 		"OtherStuff": "Integer",
     }
-  },
-  
+  },  
   {
 	"type": "Spell",
+	"attributes":
+	{
+		"SpellEffect": "String"
+	}
+  },  
+  {
+    "type": "Trap",
 	"attributes":
 	{
 		"SpellEffect": "String"

@@ -2,7 +2,10 @@
 using System;
 
 namespace Collectiblox {
-    public class ##CLASSNAME## 
+
+    [Serializable]
+    [CreateAssetMenu(fileName = "##CLASSNAME##.asset")]
+    public class ##CLASSNAME## : CardData<##CLASSNAME##>
     {
 	##PROPERTIES##
     }

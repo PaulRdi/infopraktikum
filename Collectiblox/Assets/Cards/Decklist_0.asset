@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c2ee1c8ce0e56c46b7d9773c4bda36c, type: 3}
+  m_Name: Decklist_0
+  m_EditorClassIdentifier: 
+  cards:
+  - cardName: WeakestDude
+    amount: 2
+  - cardName: WeakerDude
+    amount: 2
+  - cardName: BaseDude
+    amount: 2
+  - cardName: BetterDude
+    amount: 2
+  - cardName: BestDude
+    amount: 2

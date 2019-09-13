@@ -9,7 +9,7 @@ using Collectiblox.DB;
 namespace Collectiblox {
     public class Cards
     {
-        Dictionary<string, CardData> cards;
+        Dictionary<string, ICardData> cards;
 
         public static Cards DB
         {
@@ -21,7 +21,7 @@ namespace Collectiblox {
             }
         }
         static Cards instance;
-        public CardData this[string cardName]
+        public ICardData this[string cardName]
         {
             get
             {
@@ -32,11 +32,31 @@ namespace Collectiblox {
         public static void LoadDB(CardDB db)
         {
             instance = new Cards();
-            instance.cards = new Dictionary<string, CardData>();
-            foreach(CardData data in db.cards)
+            instance.cards = new Dictionary<string, ICardData>();
+            foreach(ICardData data in db.cards)
             {
-                instance.cards.Add(data.name, data);
+                instance.cards.Add(data.cardName, data);
             }
+        }
+
+        internal static ICardInstance CreateCardInstance(ICardData cardData, PlayerKey player1Key)
+        {
+            Type cardType = cardData.type;
+            ICardInstance cardInstance = null;
+
+            if (cardType == typeof(Monster))
+            {
+                cardInstance = new CardInstance<Monster>(cardData);
+            }
+            else if (cardType == typeof(Spell))
+            {
+                cardInstance = new CardInstance<Spell>(cardData);
+            }
+
+            if (cardInstance == null)
+                throw new System.Exception("Invalid Card Type");
+
+            return cardInstance;
         }
     }
 }

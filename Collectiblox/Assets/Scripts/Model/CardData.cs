@@ -1,19 +1,24 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 namespace Collectiblox
 {
-    [CreateAssetMenu(fileName = "Card")]
-    public class CardData : ScriptableObject
+    public class CardData<T> : ScriptableObject, ICardData
     {
-        public CardType Type { get { return type; } }
-        [SerializeField] CardType type;
+        public int cost => _cost;
+        [SerializeField] int _cost;
 
-        public int Cost { get { return cost; } }
-        [SerializeField] int cost;
+        public Type type => typeof(T);
 
-        //serializable custom data for each card.
-        public Dictionary<string, string> Attributes;
+        public string cardName => name;
+    }
+    public interface ICardData
+    {
+        int cost { get; }
+        string cardName { get; }
+        Type type { get; }
     }
 }
+

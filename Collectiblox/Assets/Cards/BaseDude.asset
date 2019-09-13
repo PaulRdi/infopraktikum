@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de7371bd3402b38459e5992b0e36cef0, type: 3}
-  m_Name: WeakDude
+  m_Script: {fileID: 11500000, guid: e631e0b85d798eb44b5d53fac158eace, type: 3}
+  m_Name: BaseDude
   m_EditorClassIdentifier: 
-  type: 0
-  cost: 1
-  specifics: 
+  _cost: 3
+  _combatValue: 6
+  _otherStuff: 0

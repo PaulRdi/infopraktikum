@@ -2,20 +2,21 @@ using UnityEngine;
 using System;
 
 namespace Collectiblox {
-    public class Monster 
-    {
-	
-		public int CombatValue {
-			get { return combatValue;}
-		}
-		[SerializeField]
-		private int combatValue;
 
-		public int OtherStuff {
-			get { return otherStuff;}
+    [Serializable]
+    [CreateAssetMenu(fileName = "Monster.asset")]
+    public class Monster : CardData<Monster>
+    {
+			public int combatValue{
+			get { return _combatValue;}
 		}
 		[SerializeField]
-		private int otherStuff;
+		private int _combatValue;
+		public int otherStuff{
+			get { return _otherStuff;}
+		}
+		[SerializeField]
+		private int _otherStuff;
 
     }
 }

@@ -8,6 +8,6 @@ namespace Collectiblox.DB
     [CreateAssetMenu(fileName = "CardDatabase")]
     public class CardDB : ScriptableObject
     {
-        public List<CardData> cards;
+        public List<ScriptableObject> cards;
     }
 }

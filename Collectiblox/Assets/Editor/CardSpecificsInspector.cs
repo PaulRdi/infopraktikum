@@ -7,18 +7,18 @@ using System.Linq;
 using Newtonsoft.Json;
 namespace Collectiblox
 {
-    [CustomEditor(typeof(CardData))]
+    [CustomEditor(typeof(ICardData))]
     public class CardDataInspector : Editor
     {
         static AttributeFormats attributeFormats;
 
-        CardData data;
+        ICardData data;
 
         public void OnEnable()
         {
             if (attributeFormats == null)
                 attributeFormats = AttributeFormats.Load();
-            data = (CardData)target;
+            data = (ICardData)target;
             foreach (AttributeFormat format in attributeFormats)
             {
                 string className = char.ToUpper(format.type[0]) + format.type.Substring(1);
@@ -40,6 +40,8 @@ namespace Collectiblox
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
+
+            GUILayout.Label(data.type.ToString());
 
         }
     }
