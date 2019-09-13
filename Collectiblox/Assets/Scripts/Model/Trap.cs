@@ -5,7 +5,7 @@ namespace Collectiblox {
 
     [Serializable]
     [CreateAssetMenu(fileName = "Trap.asset")]
-    public class Trap : CardData<Trap>
+    public class Trap : CardData
     {
 		public String spellEffect{
 			get { return _spellEffect;}

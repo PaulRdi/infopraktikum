@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Collectiblox
 {
@@ -10,14 +11,26 @@ namespace Collectiblox
     {
         Dictionary<PlayerKey, PlayerData> playerDatas;
         Dictionary<ICardInstance, PlayerKey> cardInstances;
+        Dictionary<Vector2Int, IFieldEntity> fieldEntities;
 
-        PlayerKey player1Key;
-        PlayerKey player2Key;
 
-        public Match(Decklist deckPlayer1, Decklist deckPlayer2)
+        public PlayerKey player1Key;
+        public PlayerKey player2Key;
+
+        Vector2Int gridSize;
+
+        Crystal crystal;
+
+        public Match(
+            Decklist deckPlayer1, 
+            Decklist deckPlayer2,
+            Vector2Int gridSizeX,
+            Vector2Int crystalPosition,
+            int crystalStrength)
         {
             playerDatas = new Dictionary<PlayerKey, PlayerData>();
             cardInstances = new Dictionary<ICardInstance, PlayerKey>();
+            fieldEntities = new Dictionary<Vector2Int, IFieldEntity>();
 
             player1Key = new PlayerKey();
             player2Key = new PlayerKey();
@@ -46,6 +59,17 @@ namespace Collectiblox
 
             playerDatas.Add(player1Key, new PlayerData(drawOrderP1));
             playerDatas.Add(player2Key, new PlayerData(drawOrderP2));
+
+            crystal = new Crystal(crystalStrength);
+
+            fieldEntities.Add(
+                crystalPosition,
+                new FieldEntity<Crystal>(crystal, crystalPosition));
+        }
+
+        public FieldEntity<CardInstance<Monster>> SpawnMonster(CardInstance<Monster> monster, Vector2Int position)
+        {
+            return new FieldEntity<CardInstance<Monster>>(monster, position);
         }
     }
 }

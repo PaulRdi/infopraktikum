@@ -4,9 +4,13 @@ using UnityEngine;
 
 namespace Collectiblox
 {
-    public class CardInstance<T> : ICardInstance where T : ICardData
+    public class CardInstance<T> : ICardInstance
     {
-        CardData<T> data;
+        public T data
+        {
+            get;
+            private set;
+        }
         public ICardData baseData
         {
             get;
@@ -16,6 +20,7 @@ namespace Collectiblox
         public CardInstance(ICardData cardData)
         {
             baseData = Cards.DB[cardData.cardName];
+            data = (T)Cards.DB[cardData.cardName];
         }
     }
 

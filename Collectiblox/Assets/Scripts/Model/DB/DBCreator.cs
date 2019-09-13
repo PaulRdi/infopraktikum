@@ -8,7 +8,7 @@ namespace Collectiblox.DB
     {
         public CardDB DB;
         private static bool __DBLOADED;
-        public  void Awake()
+        public void Awake()
         {
             if (!__DBLOADED)
                 Cards.LoadDB(DB);
