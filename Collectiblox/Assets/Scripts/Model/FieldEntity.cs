@@ -13,7 +13,9 @@ namespace Collectiblox
         public T entity;
         J GetEntity<J>() where J : class
         {
-            return entity as J;
+            if (entity is J)
+                return entity as J;
+            return null;
         }
 
         public Vector2Int gridPos { get; private set; }
