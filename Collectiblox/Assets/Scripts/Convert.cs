@@ -22,5 +22,10 @@ namespace Collectiblox
             }
             return null;
         }
+
+        public static Vector3 GridToWorld(Matrix4x4 matrix, Vector2Int gridPos)
+        {
+            return matrix * new Vector3(gridPos.x, 0, gridPos.y);
+        }
     }
 }

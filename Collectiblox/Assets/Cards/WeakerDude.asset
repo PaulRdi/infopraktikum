@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: WeakerDude
   m_EditorClassIdentifier: 
   _cost: 2
+  _prefab: {fileID: 2589365715706787726, guid: 68e5a48b304ba0c4c8306f10d2fead4f, type: 3}
   _combatValue: 4
   _otherStuff: 0

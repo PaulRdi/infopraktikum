@@ -7,11 +7,13 @@ using UnityEngine;
 
 namespace Collectiblox
 {
-    public class Match
+    public class MatchData
     {
-        Dictionary<PlayerKey, PlayerData> playerDatas;
-        Dictionary<ICardInstance, PlayerKey> cardInstances;
-        Dictionary<Vector2Int, IFieldEntity> fieldEntities;
+        public event Action<FieldEntity<CardInstance<Monster>>> MonsterCreated;
+
+        public Dictionary<PlayerKey, PlayerData> playerDatas;
+        public Dictionary<ICardInstance, PlayerKey> cardInstances;
+        public Dictionary<Vector2Int, IFieldEntity> fieldEntities;
 
 
         public PlayerKey player1Key;
@@ -21,7 +23,9 @@ namespace Collectiblox
 
         Crystal crystal;
 
-        public Match(
+        public MatchState currentState;
+
+        public MatchData(
             Decklist deckPlayer1, 
             Decklist deckPlayer2,
             Vector2Int gridSizeX,
@@ -57,19 +61,32 @@ namespace Collectiblox
             DrawOrder drawOrderP1 = new DrawOrder(player1Instances);
             DrawOrder drawOrderP2 = new DrawOrder(player2Instances);
 
-            playerDatas.Add(player1Key, new PlayerData(drawOrderP1));
-            playerDatas.Add(player2Key, new PlayerData(drawOrderP2));
+            playerDatas.Add(player1Key, new PlayerData(drawOrderP1, player1Key));
+            playerDatas.Add(player2Key, new PlayerData(drawOrderP2, player2Key));
 
             crystal = new Crystal(crystalStrength);
 
             fieldEntities.Add(
                 crystalPosition,
                 new FieldEntity<Crystal>(crystal, crystalPosition));
+
+            currentState = new MatchState(MatchStateType.Idle, player1Key, player2Key);
         }
 
-        public FieldEntity<CardInstance<Monster>> SpawnMonster(CardInstance<Monster> monster, Vector2Int position)
+        
+
+        public FieldEntity<CardInstance<Monster>> SpawnMonster(
+            CardInstance<Monster> monster, 
+            Vector2Int position, 
+            PlayerKey spawningPlayer = null)
         {
-            return new FieldEntity<CardInstance<Monster>>(monster, position);
+            FieldEntity<CardInstance<Monster>> entity = new FieldEntity<CardInstance<Monster>>(monster, position);
+            if (spawningPlayer != null)
+            {
+                playerDatas[spawningPlayer].fieldEntities.Add(entity);
+            }
+            MonsterCreated?.Invoke(entity);
+            return entity;
         }
     }
 }

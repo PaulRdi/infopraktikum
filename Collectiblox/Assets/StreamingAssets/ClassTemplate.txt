@@ -5,7 +5,7 @@ namespace Collectiblox {
 
     [Serializable]
     [CreateAssetMenu(fileName = "##CLASSNAME##.asset")]
-    public class ##CLASSNAME## : CardData<##CLASSNAME##>
+    public class ##CLASSNAME## : CardData
     {
 	##PROPERTIES##
     }

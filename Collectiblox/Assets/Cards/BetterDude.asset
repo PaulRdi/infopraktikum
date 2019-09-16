@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: BetterDude
   m_EditorClassIdentifier: 
   _cost: 4
+  _prefab: {fileID: 2589365715706787726, guid: 68e5a48b304ba0c4c8306f10d2fead4f, type: 3}
   _combatValue: 8
   _otherStuff: 0

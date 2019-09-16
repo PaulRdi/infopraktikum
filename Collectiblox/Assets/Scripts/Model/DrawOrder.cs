@@ -12,6 +12,10 @@ namespace Collectiblox
         int seed;
         int currRandom;
         public List<ICardInstance> drawOrder;
+        /// <summary>
+        /// The order of cards the drawOrder originally had after the constructor was called.
+        /// </summary>
+        public List<ICardInstance> ogOrder;
 
         public DrawOrder (List<ICardInstance> cards)
         {
@@ -19,6 +23,20 @@ namespace Collectiblox
             seed = UnityEngine.Random.Range(0, 100000000);
             currRandom = seed;
             Shuffle<ICardInstance>(ref drawOrder);
+            ogOrder = new List<ICardInstance>(drawOrder);
+        }
+
+        public bool TryDraw(out ICardInstance card)
+        {
+            card = null;
+
+            if (drawOrder.Count > 0)
+            {
+                card = drawOrder[0];
+                drawOrder.RemoveAt(0);
+                return true;
+            }
+            return false;
         }
 
         //fisher yates shuffle: https://pdfs.semanticscholar.org/d9f6/65a955a2706c7dd3d4fe47e959f0d118932b.pdf

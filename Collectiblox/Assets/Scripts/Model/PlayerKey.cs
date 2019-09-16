@@ -23,11 +23,19 @@ namespace Collectiblox
 
         public static bool operator ==(PlayerKey lhs, PlayerKey rhs)
         {
+            if (object.ReferenceEquals(lhs, null) && object.ReferenceEquals(rhs, null))
+                return true;
+            else if (object.ReferenceEquals(lhs, null) || object.ReferenceEquals(rhs, null))
+                return false;
             return lhs.Equals(rhs);
         }
 
         public static bool operator !=(PlayerKey lhs, PlayerKey rhs)
         {
+            if (object.ReferenceEquals(lhs, null) && object.ReferenceEquals(rhs, null))
+                return false;
+            else if (object.ReferenceEquals(lhs, null) || object.ReferenceEquals(rhs, null))
+                return true;
             return !lhs.Equals(rhs);
         }
     }

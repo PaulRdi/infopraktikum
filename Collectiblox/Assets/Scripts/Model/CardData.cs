@@ -10,6 +10,9 @@ namespace Collectiblox
         public int cost => _cost;
         [SerializeField] int _cost;
 
+        public GameObject prefab => _prefab;
+        [SerializeField] GameObject _prefab;
+
         public Type type => GetType();
 
         public string cardName => name;
@@ -19,6 +22,7 @@ namespace Collectiblox
         int cost { get; }
         string cardName { get; }
         Type type { get; }
+        GameObject prefab { get; }
     }
 }
 

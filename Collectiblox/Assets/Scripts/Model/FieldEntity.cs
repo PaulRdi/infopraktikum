@@ -12,19 +12,19 @@ namespace Collectiblox
     {
         public T entity;
 
-        public Vector2Int position { get; private set; }
+        public Vector2Int gridPos { get; private set; }
 
         public Type type => typeof(T);
 
         public FieldEntity(T entity, Vector2Int position)
         {
             this.entity = entity;
-            this.position = position;
+            this.gridPos = position;
         }
     }
     public interface IFieldEntity
     {
-        Vector2Int position { get; }
+        Vector2Int gridPos { get; }
         Type type { get; }
     }
 }
