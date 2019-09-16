@@ -11,7 +11,7 @@ namespace Collectiblox
     public class FieldEntity<T> : IFieldEntity
     {
         public T entity;
-        J GetEntity<J>() where J : class
+        public J GetEntity<J>() where J : class
         {
             if (entity is J)
                 return entity as J;
