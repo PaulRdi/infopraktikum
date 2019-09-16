@@ -11,6 +11,10 @@ namespace Collectiblox
     public class FieldEntity<T> : IFieldEntity
     {
         public T entity;
+        J GetEntity<J>() where J : class
+        {
+            return entity as J;
+        }
 
         public Vector2Int gridPos { get; private set; }
 
@@ -26,5 +30,6 @@ namespace Collectiblox
     {
         Vector2Int gridPos { get; }
         Type type { get; }
+        T GetEntity<T>() where T : class;
     }
 }
