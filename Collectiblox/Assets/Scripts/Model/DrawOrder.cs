@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Collectiblox
+namespace Collectiblox.Model
 {
     public class DrawOrder
     {

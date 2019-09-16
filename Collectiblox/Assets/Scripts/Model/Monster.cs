@@ -1,7 +1,7 @@
 using UnityEngine;
 using System;
 
-namespace Collectiblox {
+namespace Collectiblox.Model {
 
     [Serializable]
     [CreateAssetMenu(fileName = "Monster.asset")]

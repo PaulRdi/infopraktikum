@@ -10,7 +10,8 @@ using UnityEditor;
 using System.CodeDom.Compiler;
 using System.IO;
 using Microsoft.CSharp;
-namespace Collectiblox
+using Collectiblox.Model;
+namespace Collectiblox.EditorExtensions
 {
     //https://stackoverflow.com/questions/3862226/how-to-dynamically-create-a-class
     public static class ClassFileCreator

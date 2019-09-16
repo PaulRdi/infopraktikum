@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using Collectiblox.Model;
+using Collectiblox.Model.Commands;
+using Collectiblox.Controller;
+using Collectiblox.Model.DB;
 using System;
 
 namespace Collectiblox

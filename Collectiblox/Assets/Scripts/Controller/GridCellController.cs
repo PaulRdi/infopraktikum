@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-namespace Collectiblox
+namespace Collectiblox.Controller
 {
     public class GridCellController : MonoBehaviour
     {

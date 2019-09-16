@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Collectiblox
+namespace Collectiblox.Model.Commands
 {
     /// <summary>
     /// would contain interface to possible serialization logic!

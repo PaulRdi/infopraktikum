@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
 
-namespace Collectiblox
+namespace Collectiblox.Model.Commands
 {
     public class CommandManager
     {

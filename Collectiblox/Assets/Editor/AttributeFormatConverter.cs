@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
-namespace Collectiblox
+using Collectiblox.Model;
+namespace Collectiblox.EditorExtensions
 {
     public class AttributeFormatConverter : JsonConverter
     {

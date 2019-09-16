@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Collectiblox
+namespace Collectiblox.Model.Commands
 {
     public class SpawnUnitBehaviour : CommandBehaviour
     {
@@ -19,12 +19,11 @@ namespace Collectiblox
         public override void Execute(GameManager gm, ICommand command)
         {
             PlayCardCommandData data = command.GetData<PlayCardCommandData>();
-
-            if (data.cardInstance.baseData.type == typeof(Monster))
+            CardInstance<Monster> monster = data.cardInstance.Get<Monster>();
+            if (monster != null)
             {
-                CardInstance<Monster> monster = (CardInstance<Monster>)data.cardInstance;
                 gm.match.SpawnMonster(monster, data.targetTile);
-            }
+            }  
         }
     }
 }
