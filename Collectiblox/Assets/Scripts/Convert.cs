@@ -22,7 +22,12 @@ namespace Collectiblox
             }
             return null;
         }
-
+        /// <summary>
+        /// Converts grid coordinates to world coordinates in the XZ-Plane
+        /// </summary>
+        /// <param name="matrix"></param>
+        /// <param name="gridPos"></param>
+        /// <returns></returns>
         public static Vector3 GridToWorld(Matrix4x4 matrix, Vector2Int gridPos)
         {
             return matrix * new Vector3(gridPos.x, 0, gridPos.y);
