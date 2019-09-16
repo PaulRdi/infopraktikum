@@ -23,7 +23,7 @@ namespace Collectiblox
             return null;
         }
         /// <summary>
-        /// Converts grid coordinates to world coordinates in the XZ-Plane
+        /// Converts grid coordinates to world coordinates in the XZ-Plane  
         /// </summary>
         /// <param name="matrix"></param>
         /// <param name="gridPos"></param>
