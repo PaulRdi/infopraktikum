@@ -51,12 +51,13 @@ namespace Collectiblox.Model.Commands
         /// </summary>
         /// <param name="gm"></param>
         /// <returns></returns>
-        public bool TryExecuteNextCommand (GameManager gm)
+        public bool TryExecuteNextCommand (GameManager gm, out ICommand command)
         {
+            command = null;
             if (commandStack.Count == 0)
                 return false;
 
-            ICommand command = commandStack.Pop();
+            command = commandStack.Pop();
             foreach(CommandBehaviour behaviour in registeredBehaviours[command.type])
             {
                 behaviour.Execute(gm, command);

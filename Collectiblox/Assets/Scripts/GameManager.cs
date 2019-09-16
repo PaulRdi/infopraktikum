@@ -12,10 +12,21 @@ namespace Collectiblox
 {
     public class GameManager : MonoBehaviour
     {
+        public static GameManager instance
+        {
+            get
+            {
+                if (_instance == null)
+                    _instance = FindObjectOfType<GameManager>();
+                return _instance;
+            }
+        }
+        static GameManager _instance;
+
         [SerializeField] Decklist player1Decklist;
         [SerializeField] Decklist player2Decklist;
 
-        [SerializeField] Transform playingGridParent;
+        [SerializeField] public Transform playingGridParent;
         [SerializeField] GameObject playingGridPrefab;
         [SerializeField] GameObject crystalPrefab;
 
@@ -23,6 +34,7 @@ namespace Collectiblox
 
         public MatchData match;
         public Dictionary<IFieldEntity, MonoBehaviour> entityToBehaviour;
+        public List<ICommandExecutionListener> commandExecutionListeners;
         public List<MatchState> stateOrder;
         public int currentStateOrderIndex;
         public CommandManager commandManager;
@@ -36,15 +48,22 @@ namespace Collectiblox
         #region Initialization
         private void Init()
         {
+            _instance = this;
+            InitGame();
+        }
+
+        private void InitGame()
+        {
             GameConfig.current = config;
             entityToBehaviour = new Dictionary<IFieldEntity, MonoBehaviour>();
+            commandExecutionListeners = new List<ICommandExecutionListener>();
             stateOrder = new List<MatchState>();
             commandManager = new CommandManager();
             validator = new Validator();
 
             //Create Model
             match = new MatchData(
-                player1Decklist, 
+                player1Decklist,
                 player2Decklist,
                 config.gridSize,
                 config.crystalPosition,
@@ -61,6 +80,14 @@ namespace Collectiblox
                     go = Instantiate(playingGridPrefab, playingGridParent);
                     go.transform.localPosition = new Vector3(x, 0, y);
                     go.GetComponentInChildren<GridCellController>().Init(new Vector2Int(x, y));
+                }
+            }
+
+            foreach (MonoBehaviour mb in FindObjectsOfType<MonoBehaviour>())
+            {
+                if (mb is ICommandExecutionListener)
+                {
+                    commandExecutionListeners.Add((ICommandExecutionListener)mb);
                 }
             }
 
@@ -171,9 +198,14 @@ namespace Collectiblox
                             UnityEngine.Random.Range(0,5)))));
             }
 
-            if (Input.GetKeyDown(KeyCode.G))
+
+            if (validator.isValidated)
             {
-                commandManager.TryExecuteNextCommand(this);
+                ICommand cmd;
+                if (commandManager.TryExecuteNextCommand(this, out cmd))
+                {
+                    commandExecutionListeners.ForEach(e => e.CommandExecuted(cmd, this));
+                }
             }
         }
         private void Awake()
