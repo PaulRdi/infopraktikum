@@ -1,5 +1,5 @@
 {
-    "name": "Tests.EditMode",
+    "name": "Collectiblox.Editor.Tests",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
