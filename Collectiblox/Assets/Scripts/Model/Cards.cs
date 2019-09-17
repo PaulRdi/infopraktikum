@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-using Collectiblox.DB;
+using Collectiblox.Model.DB;
 
-namespace Collectiblox {
+namespace Collectiblox.Model {
     public class Cards
     {
         Dictionary<string, ICardData> cards;

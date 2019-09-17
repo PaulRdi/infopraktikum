@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Collectiblox.DB
+namespace Collectiblox.Model.DB
 {
     public class DBCreator : MonoBehaviour
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-namespace Collectiblox
+namespace Collectiblox.Model
 {
     public class CardData : ScriptableObject, ICardData
     {

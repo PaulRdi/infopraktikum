@@ -8,8 +8,9 @@ using UnityEngine;
 using Newtonsoft.Json;
 using System.IO;
 using System.Collections;
+using Collectiblox.Model;
 
-namespace Collectiblox
+namespace Collectiblox.EditorExtensions
 {
 
     public class AttributeFormats : IEnumerable<AttributeFormat>

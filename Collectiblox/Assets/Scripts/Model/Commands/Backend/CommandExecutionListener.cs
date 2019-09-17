@@ -6,12 +6,8 @@ using System.Threading.Tasks;
 
 namespace Collectiblox.Model.Commands
 {
-    public enum CommandBehaviourPriority
+    public interface ICommandExecutionListener
     {
-        First = int.MaxValue - 1,
-        Filter = 1000,
-        Default = 0,
-        Late = -1000,
-        Last = int.MinValue + 1
+        void CommandExecuted(ICommand command, GameManager gm);
     }
 }

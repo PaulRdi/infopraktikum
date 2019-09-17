@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-namespace Collectiblox.DB
+namespace Collectiblox.Model.DB
 {
     [CreateAssetMenu(fileName = "CardDatabase")]
     public class CardDB : ScriptableObject

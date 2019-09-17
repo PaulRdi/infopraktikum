@@ -5,7 +5,8 @@ using UnityEditor;
 using System;
 using System.Linq;
 using Newtonsoft.Json;
-namespace Collectiblox
+using Collectiblox.Model;
+namespace Collectiblox.EditorExtensions
 {
     [CustomEditor(typeof(ICardData))]
     public class CardDataInspector : Editor

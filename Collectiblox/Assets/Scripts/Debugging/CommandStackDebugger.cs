@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using Collectiblox.Model.Commands;
 
-namespace Collectiblox
+namespace Collectiblox.Debugging
 {
     public class CommandStackDebugger : MonoBehaviour
     {

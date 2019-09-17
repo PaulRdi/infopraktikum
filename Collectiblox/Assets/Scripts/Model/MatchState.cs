@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Collectiblox
+namespace Collectiblox.Model
 {
     public enum MatchStateType
     {
