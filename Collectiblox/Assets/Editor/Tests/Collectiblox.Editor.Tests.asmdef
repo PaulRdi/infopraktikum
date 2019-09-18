@@ -2,7 +2,8 @@
     "name": "Collectiblox.Editor.Tests",
     "references": [
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Collectiblox.Editor"
     ],
     "includePlatforms": [
         "Editor"
