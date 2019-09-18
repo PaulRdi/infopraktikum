@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -8,22 +9,27 @@ namespace Tests
 {
     public class SummonParticlesTest
     {
-        // A Test behaves as an ordinary method
-        [Test]
-        public void SummonParticlesTestSimplePasses()
-        {
-            // Use the Assert class to test conditions
+        private GameObject summonParticlesPrefab;
+
+        [OneTimeSetUp]
+        public void Setup() {
+            summonParticlesPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/SummonParticles.prefab");
+            Assert.NotNull(summonParticlesPrefab.GetComponent<DestroyNotifier>());
+            Assert.NotNull(summonParticlesPrefab.GetComponent<ParticleSystem>());
+            Assert.IsFalse(summonParticlesPrefab.GetComponent<ParticleSystem>().main.loop, "ParticleSystem should not loop, help!");
         }
 
-        // A UnityTest behaves like a coroutine in Play Mode. In Edit Mode you can use
-        // `yield return null;` to skip a frame.
         [UnityTest]
-        public IEnumerator SummonParticlesTestWithEnumeratorPasses()
-        {
+        public IEnumerator PrefabDestroysItselfAfterPlaying() {
+            var summonParticles = Object.Instantiate(summonParticlesPrefab);
 
-            // Use the Assert class to test conditions.
-            // Use yield to skip a frame.
-            yield return null;
+            bool isDestroyed = false;
+            summonParticles.GetComponent<DestroyNotifier>().Destroyed += (GameObject gameObject) => {
+                isDestroyed = true;
+            };
+            yield return new WaitForSeconds(summonParticles.GetComponent<ParticleSystem>().main.duration + 1);
+
+            Assert.IsTrue(isDestroyed);
         }
     }
 }
