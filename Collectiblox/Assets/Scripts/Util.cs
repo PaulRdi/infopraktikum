@@ -22,5 +22,10 @@ namespace Collectiblox
             }
             return objects;
         }
+        public static IEnumerable<T> GetEnumerableOfTypeLinq<T>(params object[] constructorArgs) where T : class {
+            return Assembly.GetAssembly(typeof(T)).GetTypes()
+                .Where(myType => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)))
+                .Select(type => (T)Activator.CreateInstance(type, constructorArgs));
+        }
     }
 }
