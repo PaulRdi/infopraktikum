@@ -4,19 +4,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
+using Collectiblox.Model.Rules;
 
 namespace Collectiblox.Model.Commands
 {
     public class CommandManager
     {
         public Stack<ICommand> commandStack;
+        
         List<ICommandListener> commandListeners;
+        List<Rule> rules;
         Dictionary<CommandType, List<CommandBehaviour>> registeredBehaviours;
 
         public CommandManager()
         {
             commandStack = new Stack<ICommand>();
             commandListeners = new List<ICommandListener>();
+            rules = new List<Rule>();
             registeredBehaviours = new Dictionary<CommandType, List<CommandBehaviour>>();
 
             foreach (CommandBehaviour behaviour in Util.GetEnumerableOfType<CommandBehaviour>())
@@ -24,6 +28,11 @@ namespace Collectiblox.Model.Commands
                 foreach (CommandType type in behaviour.targetCommandTypes)
                     TryAddCommandBehaviour(type, behaviour);
             }
+            foreach (Rule rule in Util.GetEnumerableOfType<Rule>())
+            {
+                rules.Add(rule);
+            }
+
             for (int i =0; i < registeredBehaviours.Count; i++)
             {
                 CommandType key = registeredBehaviours.ElementAt(i).Key;
@@ -32,19 +41,27 @@ namespace Collectiblox.Model.Commands
         }
 
         /// <summary>
+        /// Checks if any rules forbid the command from being executed.
+        /// 
         /// Calls CommandPushed on each ICommandListener.
         /// Handle queue locking if needed.
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
-        public bool TrySendCommand(ICommand command)
+        public RuleEvaluationInfo TrySendCommand(GameManager gm, ICommand command)
         {
+            foreach(Rule rule in rules)
+            {
+                RuleEvaluationInfo evaluationInfo = rule.IsCommandSendable(gm, command);
+                if (!evaluationInfo.actionAllowed)
+                    return evaluationInfo;
+            }
             commandStack.Push(command);
             foreach(ICommandListener commandListener in commandListeners)
             {
                 commandListener.CommandPushed(command);
             }
-            return true;
+            return new RuleEvaluationInfo(true);
         }
         /// <summary>
         /// Executes each CommandBehaviour registired for the next Command in the Queue.
@@ -58,9 +75,14 @@ namespace Collectiblox.Model.Commands
                 return false;
 
             command = commandStack.Pop();
+            foreach(Rule rule in rules)
+            {
+                if (!rule.IsCommandExecutable(gm, command).actionAllowed)
+                    return false;
+            }
             foreach(CommandBehaviour behaviour in registeredBehaviours[command.type])
             {
-                behaviour.Execute(gm, command);
+                behaviour.OnExecute(gm, command);
             }
             return true;
         }

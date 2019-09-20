@@ -6,6 +6,7 @@ using Collectiblox.Model;
 using Collectiblox.Model.Commands;
 using Collectiblox.Controller;
 using Collectiblox.Model.DB;
+using Collectiblox.Model.Rules;
 using System;
 
 namespace Collectiblox
@@ -40,9 +41,9 @@ namespace Collectiblox
         public CommandManager commandManager;
         public Validator validator;
 
-        public bool TrySendCommand(ICommand command)
+        public RuleEvaluationInfo TrySendCommand(ICommand command)
         {
-            return commandManager.TrySendCommand(command);
+            return commandManager.TrySendCommand(this, command);
         }
 
         #region Initialization
@@ -188,7 +189,7 @@ namespace Collectiblox
         {
             if (Input.GetKeyDown(KeyCode.F))
             {
-                TrySendCommand(new Command<PlayCardCommandData>(
+                RuleEvaluationInfo ri = TrySendCommand(new Command<PlayCardCommandData>(
                     CommandType.PlayCard, 
                     new PlayCardCommandData(
                         match.player1Key,
@@ -196,6 +197,9 @@ namespace Collectiblox
                         new Vector2Int(
                             UnityEngine.Random.Range(0,5), 
                             UnityEngine.Random.Range(0,5)))));
+
+                if (!ri.actionAllowed)
+                    Debug.Log(ri.ruleDeniedMessage);
             }
 
 

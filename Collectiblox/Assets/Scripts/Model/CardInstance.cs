@@ -23,6 +23,17 @@ namespace Collectiblox.Model
                 return this as CardInstance<J>;
             return null;
         }
+        /// <summary>
+        /// Modified cost for this card instance.
+        /// Todo: Implement interface for modifying cost
+        /// </summary>
+        public int cost
+        {
+            get
+            {
+                return data.cost;
+            }
+        }
 
         public ICardData baseData
         {
@@ -42,5 +53,6 @@ namespace Collectiblox.Model
         ICardData baseData { get; }
         J GetData<J>() where J : CardData;
         CardInstance<J> Get<J>() where J : CardData;
+        int cost { get; }
     }
 }

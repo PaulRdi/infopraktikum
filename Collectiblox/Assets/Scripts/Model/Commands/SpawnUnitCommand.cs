@@ -16,7 +16,7 @@ namespace Collectiblox.Model.Commands
 
         public override CommandBehaviourPriority priority => CommandBehaviourPriority.Default;
 
-        public override void Execute(GameManager gm, ICommand command)
+        public override void OnExecute(GameManager gm, ICommand command)
         {
             PlayCardCommandData data = command.GetData<PlayCardCommandData>();
             CardInstance<Monster> monster = data.cardInstance.Get<Monster>();
@@ -24,6 +24,10 @@ namespace Collectiblox.Model.Commands
             {
                 gm.match.SpawnMonster(monster, data.targetTile);
             }  
+        }
+
+        public override void OnSend(GameManager gm, ICommand command)
+        {
         }
     }
 }

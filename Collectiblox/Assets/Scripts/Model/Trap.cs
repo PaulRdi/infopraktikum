@@ -1,7 +1,7 @@
 using UnityEngine;
 using System;
 
-namespace Collectiblox .Model{
+namespace Collectiblox.Model{
 
     [Serializable]
     [CreateAssetMenu(fileName = "Trap.asset")]

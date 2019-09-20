@@ -16,7 +16,7 @@ namespace Collectiblox.Model.Commands
 
         public override CommandBehaviourPriority priority => CommandBehaviourPriority.Last;
 
-        public override void Execute(GameManager gm, ICommand command)
+        public override void OnExecute(GameManager gm, ICommand command)
         {
             if (gm.currentStateOrderIndex >= gm.stateOrder.Count)
                 gm.currentStateOrderIndex = 0;
@@ -24,6 +24,10 @@ namespace Collectiblox.Model.Commands
                 gm.currentStateOrderIndex++;
 
             gm.match.currentState = gm.stateOrder[gm.currentStateOrderIndex];
+        }
+
+        public override void OnSend(GameManager gm, ICommand command)
+        {
         }
     }
 }
