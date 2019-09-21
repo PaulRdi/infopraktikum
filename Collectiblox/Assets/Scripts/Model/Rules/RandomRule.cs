@@ -7,14 +7,11 @@ using Collectiblox.Model.Commands;
 
 namespace Collectiblox.Model.Rules
 {
-    /// <summary>
-    /// Rule to check mana spending when a card gets played.
-    /// </summary>
-    public class ManaRule : Rule
+    public class RandomRule : Rule
     {
         public override void Init()
         {
-
+            active = false;
         }
 
         public override RuleEvaluationInfo IsCommandExecutable(GameManager gm, ICommand command)
@@ -24,12 +21,11 @@ namespace Collectiblox.Model.Rules
 
         public override RuleEvaluationInfo IsCommandSendable(GameManager gm, ICommand command)
         {
-            PlayCardCommandData data = command.GetData<PlayCardCommandData>();
-
-            if (data != null)
+            if (command.GetData<PlayCardCommandData>() != null)
             {
-                if (gm.match.playerDatas[data.sender].currentMana < data.cardInstance.cost)
-                    return new RuleEvaluationInfo(false, "Not enough Mana!");
+                float rnd = UnityEngine.Random.Range(0f, 1f);
+                if (rnd < 0.5f)
+                    return new RuleEvaluationInfo(false, "sad");
             }
             return new RuleEvaluationInfo(true);
         }

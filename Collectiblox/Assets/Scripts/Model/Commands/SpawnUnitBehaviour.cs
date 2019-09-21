@@ -19,6 +19,8 @@ namespace Collectiblox.Model.Commands
         public override void OnExecute(GameManager gm, ICommand command)
         {
             PlayCardCommandData data = command.GetData<PlayCardCommandData>();
+            if (data == null)
+                return;
             CardInstance<Monster> monster = data.cardInstance.Get<Monster>();
             if (monster != null)
             {

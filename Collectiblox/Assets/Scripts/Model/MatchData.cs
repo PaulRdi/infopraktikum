@@ -61,8 +61,8 @@ namespace Collectiblox.Model
             DrawOrder drawOrderP1 = new DrawOrder(player1Instances);
             DrawOrder drawOrderP2 = new DrawOrder(player2Instances);
 
-            playerDatas.Add(player1Key, new PlayerData(drawOrderP1, player1Key, 1, 1));
-            playerDatas.Add(player2Key, new PlayerData(drawOrderP2, player2Key, 1, 1));
+            playerDatas.Add(player1Key, new PlayerData(drawOrderP1, player1Key, 5, 5));
+            playerDatas.Add(player2Key, new PlayerData(drawOrderP2, player2Key, 5, 5));
 
             crystal = new Crystal(crystalStrength);
 

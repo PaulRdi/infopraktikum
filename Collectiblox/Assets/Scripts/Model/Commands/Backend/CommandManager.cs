@@ -31,8 +31,9 @@ namespace Collectiblox.Model.Commands
             foreach (Rule rule in Util.GetEnumerableOfType<Rule>())
             {
                 rules.Add(rule);
+                rule.Init();
             }
-
+            rules = rules.OrderBy(rule => (int)rule.priority).ToList();
             for (int i =0; i < registeredBehaviours.Count; i++)
             {
                 CommandType key = registeredBehaviours.ElementAt(i).Key;
@@ -52,11 +53,16 @@ namespace Collectiblox.Model.Commands
         {
             foreach(Rule rule in rules)
             {
+                if (!rule.active) continue;
                 RuleEvaluationInfo evaluationInfo = rule.IsCommandSendable(gm, command);
                 if (!evaluationInfo.actionAllowed)
                     return evaluationInfo;
             }
             commandStack.Push(command);
+            foreach(CommandBehaviour behaviour in registeredBehaviours[command.type])
+            {
+                behaviour.OnSend(gm, command);
+            }
             foreach(ICommandListener commandListener in commandListeners)
             {
                 commandListener.CommandPushed(command);
@@ -77,6 +83,7 @@ namespace Collectiblox.Model.Commands
             command = commandStack.Pop();
             foreach(Rule rule in rules)
             {
+                if (!rule.active) continue;
                 if (!rule.IsCommandExecutable(gm, command).actionAllowed)
                     return false;
             }

@@ -19,6 +19,7 @@ namespace Collectiblox.Model.Commands
         public CommandType type { get; private set; }
         public Type dataType { get { return typeof(T); } }
         public T data { get; private set; }
+        CommandData ICommand.data => data;
         public PlayerKey sender
         {
             get { return data.sender; }
@@ -43,6 +44,7 @@ namespace Collectiblox.Model.Commands
 
     public interface ICommand
     {
+        CommandData data { get; }
         CommandType type { get; }
         Type dataType { get; }
         T GetData<T>() where T : CommandData;

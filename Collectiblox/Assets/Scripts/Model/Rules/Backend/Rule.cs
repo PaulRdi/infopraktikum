@@ -36,5 +36,19 @@ namespace Collectiblox.Model.Rules
         /// <returns>True if executing the Command is legal with the current board state.
         /// False if executing the command is illegal with the current board state</returns>
         public abstract RuleEvaluationInfo IsCommandExecutable(GameManager gm, ICommand command);
+
+        public abstract void Init();
+
+        public bool active {
+            get { return _active; }
+            protected set { _active = value; }
+        }
+        protected bool _active = true;
+        public void  SetActive(bool active)
+        {
+            this.active = active;
+        }
+        public virtual RulePriority priority => RulePriority.Default;
+
     }
 }
