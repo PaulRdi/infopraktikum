@@ -2,7 +2,9 @@
 #pragma kernel CSMain
 
 struct DataTest {
-	float3 rgb;
+	float r;
+	float g;
+	float b;
 };
 
 RWStructuredBuffer<DataTest> dataTest;
@@ -11,5 +13,8 @@ RWStructuredBuffer<DataTest> dataTest;
 [numthreads(10,1,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-	dataTest[id.x].rgb = dataTest[id.x].rgb.x = 0;
+	for (int i = 0; i < (int)dataTest.Length; i++)
+	{
+		dataTest[i].r = 0;
+	}
 }
