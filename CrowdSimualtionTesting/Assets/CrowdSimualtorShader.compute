@@ -3,8 +3,9 @@
 
 
 struct Agent {
-	float3 position;
+	float4 position;
 	float3 orientation;
+	float4x4 modelMatrix;
 	float speed;
 	float angularVelocity;
 };
@@ -14,22 +15,31 @@ struct Agent {
 // Create a RenderTexture with enableRandomWrite flag and set it
 RWTexture2D<float4> Result;
 StructuredBuffer<Agent> Agents;
-float4x4 INV_VP;
-	
+float4x4 INVERSE_MATRIX_VP;
+float4x4 MATRIX_VP;
+float2 screenSize;
 
-[numthreads(32,32,1)]
+[numthreads(32,18,1)]
 void SetPositionsTex(uint3 id : SV_DispatchThreadID)
 {
 	float dist = 10000000;
 	//screen coordinates from (0 -> 1) or (0 -> textureWidth)
-	float4 pixelWorldPos = mul(INV_VP, float4(id.x / 1024, id.y / 1024, 0, 0));
-	//float4 pixelWorldPos = mul(INV_VP, float4(id.x, id.y ,0,0));
+	//https://answers.unity.com/questions/783770/screenspace-to-worldspace-in-computeshader.html
+	float2 pixelPos = float2(((float)id.x), ((float)id.y));
+	float2 clipPos = float2(
+		2.0 * pixelPos.x * (1.0 / screenSize.x) - 1.0,
+		1.0 - 2.0 * pixelPos.y * (1.0 / screenSize.y));
+
+	float4 worldPos = mul(float4(clipPos, 1, 1), INVERSE_MATRIX_VP);
+	float3 realWorldPos = worldPos.xyz * worldPos.w;
 	//currently taking pixel distance from bottom left position of screen.
-	for (int i = 0; i < Agents.Length; i++)
+	for (uint i = 0; i < Agents.Length; ++i)
 	{
-		dist = min(dist, distance(pixelWorldPos.xyz, Agents[i].position));
+		dist = min(dist, distance(realWorldPos, Agents[i].position));
 	}
 
-	if (dist < 1)
+	if (dist < 1000)
 		Result[id.xy] = float4(1, 0, 1, 0);
+	else
+		Result[id.xy] = float4(1, 1, 1, 0);
 }

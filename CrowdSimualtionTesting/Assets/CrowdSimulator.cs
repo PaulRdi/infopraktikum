@@ -34,8 +34,9 @@ array on the GPU."
 
 public struct Walker
 {
-    public Vector3 position;
+    public Vector4 position;
     public Vector3 orientation;
+    public Matrix4x4 localToWorld;
     public float speed;
     public float angularVelocity; //velocity around the y axis.
 }
@@ -62,7 +63,7 @@ public class CrowdSimulator : MonoBehaviour
         idToData = new Dictionary<int, Walker>();
         ids = new List<int>();
         agents = FindObjectsOfType<AgentController>();
-        dynamicObstaclesRenderTex = new RenderTexture(1024, 1024, 24);
+        dynamicObstaclesRenderTex = new RenderTexture(obstacleProjectionCamera.pixelWidth, obstacleProjectionCamera.pixelHeight, 24);
         dynamicObstaclesRenderTex.enableRandomWrite = true;
         dynamicObstaclesRenderTex.Create();
 
@@ -80,20 +81,23 @@ public class CrowdSimulator : MonoBehaviour
         obstacleProjectionCamera.Render();
         obstacleProjectionCamera.gameObject.SetActive(false);
 
-
-        crowdSimulationShader.SetMatrix("INV_VP", GetInvVP());
+        Matrix4x4 vp = GetVPMatrix();
+        crowdSimulationShader.SetMatrix("INVERSE_MATRIX_VP", vp.inverse);
+        crowdSimulationShader.SetMatrix("MATRIX_VP", vp);
         int initTextureKernelIndex = crowdSimulationShader.FindKernel("SetPositionsTex");
-        ComputeBuffer buffer = new ComputeBuffer(ids.Count, sizeof(float)*8);
+        ComputeBuffer buffer = new ComputeBuffer(ids.Count, sizeof(float)*25);
+
         buffer.SetData<Walker>(idToData.Values.ToList());
+        crowdSimulationShader.SetVector("screenSize", new Vector2(
+            obstaclesTexture.width,
+            obstaclesTexture.height));
         crowdSimulationShader.SetBuffer(initTextureKernelIndex, "Agents", buffer);
         crowdSimulationShader.SetTexture(initTextureKernelIndex, "Result", dynamicObstaclesRenderTex);
-        crowdSimulationShader.Dispatch(initTextureKernelIndex, 32, 32, 1);
-        
+        crowdSimulationShader.Dispatch(initTextureKernelIndex, obstaclesTexture.width/32, obstaclesTexture.height/18, 1);
         buffer.Dispose();
-
     }
     //https://answers.unity.com/questions/12713/how-do-i-reproduce-the-mvp-matrix.html
-    private Matrix4x4 GetInvVP()
+    private Matrix4x4 GetVPMatrix()
     {
         bool d3d = SystemInfo.graphicsDeviceVersion.IndexOf("Direct3D") > -1;
         Matrix4x4 V = obstacleProjectionCamera.worldToCameraMatrix;
@@ -111,15 +115,15 @@ public class CrowdSimulator : MonoBehaviour
                 P[2, i] = P[2, i] * 0.5f + P[3, i] * 0.5f;
             }
         }
-        return (P * V).inverse;
+        return P * V;
     }
-
     void UpdateAgents()
     {
         foreach(int id in ids)
         {
             Walker walker = new Walker();
             walker.position = idToController[id].transform.position;
+            walker.localToWorld = idToController[id].transform.localToWorldMatrix;
             idToData[id] = walker;
         }
     }
