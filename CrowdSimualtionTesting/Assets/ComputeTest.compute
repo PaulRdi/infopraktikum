@@ -1,0 +1,15 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+struct DataTest {
+	float3 rgb;
+};
+
+RWStructuredBuffer<DataTest> dataTest;
+
+//https://forum.unity.com/threads/solved-unity-compute-shader-cycle-through-rwstructuredbuffer.533682/
+[numthreads(10,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+	dataTest[id.x].rgb = dataTest[id.x].rgb.x = 0;
+}
