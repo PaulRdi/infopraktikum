@@ -1,25 +1,36 @@
 ﻿// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel SetPositionsTex
-
+#pragma kernel TestMove
+#pragma kernel ResetTex
+#pragma kernel Move
 
 struct Agent {
-	float4 position;
+	float3 position;
 	float3 orientation;
 	float4x4 modelMatrix;
 	float speed;
 	float angularVelocity;
+	int id;
 };
 
 
 
 // Create a RenderTexture with enableRandomWrite flag and set it
 RWTexture2D<float4> Result;
-StructuredBuffer<Agent> Agents;
+RWStructuredBuffer<Agent> Agents;
+RWTexture2D<float4> WorldState;
 float4x4 INVERSE_MATRIX_VP;
 float4x4 MATRIX_VP;
 float2 screenSize;
 
+[numthreads(32, 18, 1)]
+void ResetTex(uint3 id : SV_DispatchThreadID)
+{
+	WorldState[id.xy] = float4(0, 0, 0, 0);
+}
+
 [numthreads(32,18,1)]
+//not getting this to work :(
 void SetPositionsTex(uint3 id : SV_DispatchThreadID)
 {
 	float dist = 10000000;
@@ -35,11 +46,32 @@ void SetPositionsTex(uint3 id : SV_DispatchThreadID)
 	//currently taking pixel distance from bottom left position of screen.
 	for (uint i = 0; i < Agents.Length; ++i)
 	{
-		dist = min(dist, distance(realWorldPos, Agents[i].position));
+		dist = min(dist, length(realWorldPos - Agents[i].position));
 	}
 
-	if (dist < 1000)
+	if (dist < 10)
 		Result[id.xy] = float4(1, 0, 1, 0);
 	else
 		Result[id.xy] = float4(1, 1, 1, 0);
+}
+
+[numthreads(1024, 1, 1)]
+void TestMove(uint3 id : SV_DispatchThreadID)
+{
+	Agents[id.x].angularVelocity = 3.0;
+
+	float rotAmt = radians(3.0);
+	float3 dir = Agents[id.x].orientation;
+	Agents[id.x].orientation = float3(
+		dir.x * cos(rotAmt) - dir.z * sin(rotAmt),
+		0,
+		dir.x * sin(rotAmt) + dir.z * cos(rotAmt));
+
+	Agents[id.x].position.xyz += Agents[id.x].orientation;
+}
+
+[numthreads(1024, 1, 1)]
+void Move(uint3 id : SV_DispatchThreadID)
+{
+	//floatAgents[id.x].position
 }

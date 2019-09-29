@@ -34,11 +34,12 @@ array on the GPU."
 
 public struct Walker
 {
-    public Vector4 position;
+    public Vector3 position;
     public Vector3 orientation;
     public Matrix4x4 localToWorld;
     public float speed;
     public float angularVelocity; //velocity around the y axis.
+    public int id;
 }
 public class CrowdSimulator : MonoBehaviour
 {
@@ -49,53 +50,107 @@ public class CrowdSimulator : MonoBehaviour
     [SerializeField] RenderTexture dynamicObstaclesRenderTex;
     [SerializeField] Camera obstacleProjectionCamera;
     [SerializeField] ComputeShader crowdSimulationShader;
-
-    AgentController[] agents;
+    [SerializeField] int resolutionScale = 2;
+    [SerializeField] Shader obstaclesShader;
+    [SerializeField] GameObject agentPrefab;
+    List<Walker> data;
+    List<AgentController> agents;
 
     Dictionary<int, AgentController> idToController;
-    Dictionary<int, Walker> idToData;
-    List<int> ids;
-
 
     void Start()
     {
+        agents = new List<AgentController>();
+        CreateRandomAgents();
+
         idToController = new Dictionary<int, AgentController>();
-        idToData = new Dictionary<int, Walker>();
-        ids = new List<int>();
-        agents = FindObjectsOfType<AgentController>();
+        data = new List<Walker>();
         dynamicObstaclesRenderTex = new RenderTexture(obstacleProjectionCamera.pixelWidth, obstacleProjectionCamera.pixelHeight, 24);
         dynamicObstaclesRenderTex.enableRandomWrite = true;
         dynamicObstaclesRenderTex.Create();
-
-        for (int id = 0; id < agents.Length; id++)
-        {
-            agents[id].Init(id);
-            idToController.Add(id, agents[id]);
-            idToData.Add(id, new Walker());
-            ids.Add(id);
-        }
-        UpdateAgents();
-
-        obstaclesTexture = new RenderTexture(1024, 1024, 8);
-        obstacleProjectionCamera.targetTexture = obstaclesTexture;
-        obstacleProjectionCamera.Render();
-        obstacleProjectionCamera.gameObject.SetActive(false);
-
         Matrix4x4 vp = GetVPMatrix();
         crowdSimulationShader.SetMatrix("INVERSE_MATRIX_VP", vp.inverse);
         crowdSimulationShader.SetMatrix("MATRIX_VP", vp);
-        int initTextureKernelIndex = crowdSimulationShader.FindKernel("SetPositionsTex");
-        ComputeBuffer buffer = new ComputeBuffer(ids.Count, sizeof(float)*25);
+        for (int id = 0; id < agents.Count; id++)
+        {
+            agents[id].Init(id);
+            Walker walker = new Walker();
+            walker.orientation = new Vector3(UnityEngine.Random.Range(-1f,1f), 0, UnityEngine.Random.Range(-1f, 1f));
+            walker.id = id;
+            walker.localToWorld = agents[id].transform.localToWorldMatrix;
+            idToController.Add(id, agents[id]);
+            data.Add(walker);
+        }
 
-        buffer.SetData<Walker>(idToData.Values.ToList());
+        obstaclesTexture = new RenderTexture(
+            obstacleProjectionCamera.pixelWidth * resolutionScale, 
+            obstacleProjectionCamera.pixelHeight * resolutionScale, 8);
+        obstacleProjectionCamera.gameObject.SetActive(false);
+
+        obstaclesTexture.enableRandomWrite = true;
+        obstacleProjectionCamera.targetTexture = obstaclesTexture;
+       
+
+        //DoAgentProjectionCompute();
+
+    }
+
+    private void CreateRandomAgents()
+    {
+        for (int i = 0; i < 10000; i++)
+        {
+            agents.Add(Instantiate(agentPrefab, new Vector3(
+                UnityEngine.Random.Range(-50f, 50f),
+                0f,
+                UnityEngine.Random.Range(-50f, 50f)), Quaternion.identity).GetComponent<AgentController>());
+        }
+    }
+
+    private void Update()
+    {
+        int clearKernelIndex = crowdSimulationShader.FindKernel("ResetTex");
+        crowdSimulationShader.SetTexture(clearKernelIndex, "WorldState", obstaclesTexture);
+        crowdSimulationShader.Dispatch(clearKernelIndex, obstaclesTexture.width / 32, obstaclesTexture.height / 18, 1);
+        obstacleProjectionCamera.RenderWithShader(obstaclesShader, "RenderType");
+        TestMove();
+    }
+
+    private void TestMove()
+    {
+        ComputeBuffer agentsBuffer = new ComputeBuffer(data.Count, sizeof(float) * 25);
+        agentsBuffer.SetData<Walker>(data);
+        int moveKernelID = crowdSimulationShader.FindKernel("TestMove");
+        crowdSimulationShader.SetBuffer(moveKernelID, "Agents", agentsBuffer);
+        crowdSimulationShader.Dispatch(moveKernelID, 1024, 1, 1);
+        Walker[] resultData = new Walker[data.Count];
+        agentsBuffer.GetData(resultData);
+        data = resultData.ToList();
+        UpdateAgents();
+        agentsBuffer.Dispose();
+    }
+
+    //project the agents colliders on to a texture.
+    //doesnt work, dont know why :(
+    private void DoAgentProjectionCompute()
+    {
+        
+        int initTextureKernelIndex = crowdSimulationShader.FindKernel("SetPositionsTex");
+        ComputeBuffer buffer = new ComputeBuffer(data.Count, sizeof(float) * 25);
+
+        buffer.SetData<Walker>(data);
         crowdSimulationShader.SetVector("screenSize", new Vector2(
-            obstaclesTexture.width,
-            obstaclesTexture.height));
+            dynamicObstaclesRenderTex.width,
+            dynamicObstaclesRenderTex.height));
         crowdSimulationShader.SetBuffer(initTextureKernelIndex, "Agents", buffer);
         crowdSimulationShader.SetTexture(initTextureKernelIndex, "Result", dynamicObstaclesRenderTex);
-        crowdSimulationShader.Dispatch(initTextureKernelIndex, obstaclesTexture.width/32, obstaclesTexture.height/18, 1);
+        crowdSimulationShader.Dispatch(
+            initTextureKernelIndex,
+            dynamicObstaclesRenderTex.width / 32,
+            dynamicObstaclesRenderTex.height / 18,
+            1);
         buffer.Dispose();
     }
+
     //https://answers.unity.com/questions/12713/how-do-i-reproduce-the-mvp-matrix.html
     private Matrix4x4 GetVPMatrix()
     {
@@ -119,12 +174,10 @@ public class CrowdSimulator : MonoBehaviour
     }
     void UpdateAgents()
     {
-        foreach(int id in ids)
+        foreach(Walker w in data)
         {
-            Walker walker = new Walker();
-            walker.position = idToController[id].transform.position;
-            walker.localToWorld = idToController[id].transform.localToWorldMatrix;
-            idToData[id] = walker;
+
+            idToController[w.id].transform.position = w.position;
         }
     }
 }
