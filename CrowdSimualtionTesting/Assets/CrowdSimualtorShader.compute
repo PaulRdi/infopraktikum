@@ -73,5 +73,27 @@ void TestMove(uint3 id : SV_DispatchThreadID)
 [numthreads(1024, 1, 1)]
 void Move(uint3 id : SV_DispatchThreadID)
 {
-	//floatAgents[id.x].position
+	float4x4 mvp = mul(MATRIX_VP, Agents[id.x].modelMatrix);
+	float4 f4pos = float4(Agents[id.x].position.x, Agents[id.x].position.y, Agents[id.x].position.z, 1.0);
+	float4 screenPos = mul(mvp, f4pos);
+
+	int lerpedX = round(lerp(0, (int)screenSize.x, screenPos.x));
+	int lerpedY = round(lerp(0, (int)screenSize.y, screenPos.y));
+
+	for (int y = lerpedY - 50; y < lerpedY + 50; y++)
+	{
+		for (int x = lerpedX - 50; x < lerpedX + 50; x++)
+		{
+			if (x == lerpedX && y == lerpedY)
+				continue;
+			WorldState[uint2(x, y)] = float4(1, 0, 1, 0);
+
+			if (distance(WorldState[uint2(x, y)], float4(1, 1, 1, 1)) < 0.1)
+			{
+				Agents[x].speed = 0;
+			}
+		}
+	}
+	Agents[id.x].position += Agents[id.x].orientation * Agents[id.x].speed;
+
 }
