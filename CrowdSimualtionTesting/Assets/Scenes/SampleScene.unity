@@ -364,7 +364,7 @@ MonoBehaviour:
   agentPrefab: {fileID: 4964688430170903462, guid: dad49c7f36e4bfc49a14275e07bd4b92,
     type: 3}
   debugImg: {fileID: 657610523}
-  numAgents: 600
+  numAgents: 650
 --- !u!1 &438571098
 GameObject:
   m_ObjectHideFlags: 0
