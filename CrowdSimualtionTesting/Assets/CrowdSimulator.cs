@@ -76,15 +76,17 @@ public class CrowdSimulator : MonoBehaviour
         Matrix4x4 vp = GetVPMatrix();
         crowdSimulationShader.SetMatrix("INVERSE_MATRIX_VP", vp.inverse);
         crowdSimulationShader.SetMatrix("CAMERA_MATRIX", obstacleProjectionCamera.worldToCameraMatrix);
+        crowdSimulationShader.SetFloat("RAY_RESOLUTION", 12.0f);
+        crowdSimulationShader.SetFloat("RAY_ANGLE", 45.0f);
         for (int id = 0; id < agents.Count; id++)
         {
             agents[id].Init(id);
             Walker walker = new Walker();
-            walker.orientation = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0, UnityEngine.Random.Range(-1f, 1f));
+            walker.orientation = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0, UnityEngine.Random.Range(-1f, 1f)).normalized;
             walker.id = id;
             walker.localToWorld = agents[id].transform.localToWorldMatrix;
             walker.position = agents[id].transform.position;
-            walker.speed = 1.0f;
+            walker.speed = 3.0f;
             walker.colliderRadius = 1.0f;
             idToController.Add(id, agents[id]);
             data.Add(walker);
