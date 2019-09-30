@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using System.Linq;
+using UnityEngine.UI;
 
 //https://hal.inria.fr/inria-00539572/document
 /*
@@ -36,6 +37,7 @@ public struct Walker
 {
     public Vector3 position;
     public Vector3 orientation;
+    public float colliderRadius;
     public Matrix4x4 localToWorld;
     public float speed;
     public float angularVelocity; //velocity around the y axis.
@@ -53,6 +55,9 @@ public class CrowdSimulator : MonoBehaviour
     [SerializeField] int resolutionScale = 2;
     [SerializeField] Shader obstaclesShader;
     [SerializeField] GameObject agentPrefab;
+    [SerializeField] RawImage debugImg;
+    [SerializeField] int numAgents = 1000;
+
     List<Walker> data;
     List<AgentController> agents;
 
@@ -70,35 +75,52 @@ public class CrowdSimulator : MonoBehaviour
         dynamicObstaclesRenderTex.Create();
         Matrix4x4 vp = GetVPMatrix();
         crowdSimulationShader.SetMatrix("INVERSE_MATRIX_VP", vp.inverse);
+        crowdSimulationShader.SetMatrix("CAMERA_MATRIX", obstacleProjectionCamera.worldToCameraMatrix);
         for (int id = 0; id < agents.Count; id++)
         {
             agents[id].Init(id);
             Walker walker = new Walker();
-            walker.orientation = new Vector3(UnityEngine.Random.Range(-1f,1f), 0, UnityEngine.Random.Range(-1f, 1f));
+            walker.orientation = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0, UnityEngine.Random.Range(-1f, 1f));
             walker.id = id;
             walker.localToWorld = agents[id].transform.localToWorldMatrix;
             walker.position = agents[id].transform.position;
             walker.speed = 1.0f;
+            walker.colliderRadius = 1.0f;
             idToController.Add(id, agents[id]);
             data.Add(walker);
         }
 
-        obstaclesTexture = new RenderTexture(
-            obstacleProjectionCamera.pixelWidth * resolutionScale, 
-            obstacleProjectionCamera.pixelHeight * resolutionScale, 8);
-        obstacleProjectionCamera.gameObject.SetActive(false);
-
-        obstaclesTexture.enableRandomWrite = true;
-        obstacleProjectionCamera.targetTexture = obstaclesTexture;
+        //InitRendering();
 
 
         //DoAgentProjectionCompute();
         Debug.Log(obstacleProjectionCamera.projectionMatrix.MultiplyPoint(agents[0].transform.position));
     }
+    private void Update()
+    {
+        Matrix4x4 vp = GetVPMatrix();
+        crowdSimulationShader.SetMatrix("MATRIX_VP", vp);
+        crowdSimulationShader.SetFloat("dt", Time.deltaTime);
+        //RenderWorldStateTex();
+        //TestMove();
+        //Move();
+        MoveV2();
+    }
+    private void InitRendering()
+    {
+        obstaclesTexture = new RenderTexture(
+            obstacleProjectionCamera.pixelWidth * resolutionScale,
+            obstacleProjectionCamera.pixelHeight * resolutionScale, 24);
+        obstacleProjectionCamera.gameObject.SetActive(false);
+
+        obstaclesTexture.enableRandomWrite = true;
+        obstacleProjectionCamera.targetTexture = obstaclesTexture;
+        debugImg.texture = obstaclesTexture;
+    }
 
     private void CreateRandomAgents()
     {
-        for (int i = 0; i < 10000; i++)
+        for (int i = 0; i < numAgents; i++)
         {
             agents.Add(Instantiate(agentPrefab, new Vector3(
                 UnityEngine.Random.Range(-50f, 50f),
@@ -107,23 +129,21 @@ public class CrowdSimulator : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        Matrix4x4 vp = GetVPMatrix();
-        crowdSimulationShader.SetMatrix("MATRIX_VP", vp);
-        RenderWorldStateTex();
-        //TestMove();
-        Move();
-    }
-
+    //Texture Based... didnt really get this to execute properly :(
     private void Move()
     {
         int moveKernelIndex = crowdSimulationShader.FindKernel("Move");
         crowdSimulationShader.SetTexture(moveKernelIndex, "WorldState", obstaclesTexture);
-        ComputeBuffer agentsBuffer = new ComputeBuffer(data.Count, sizeof(float) * 25);
+        ComputeBuffer agentsBuffer = new ComputeBuffer(data.Count, sizeof(float) * 26);
         agentsBuffer.SetData<Walker>(data);
+        crowdSimulationShader.SetVector("screenSize", new Vector2(  
+            obstacleProjectionCamera.scaledPixelWidth,
+            obstacleProjectionCamera.scaledPixelHeight));
+        crowdSimulationShader.SetVector("textureSize", new Vector2(
+            obstaclesTexture.width,
+            obstaclesTexture.height));
         crowdSimulationShader.SetBuffer(moveKernelIndex, "Agents", agentsBuffer);
-        crowdSimulationShader.Dispatch(moveKernelIndex, data.Count / 1024, 1, 1);
+        crowdSimulationShader.Dispatch(moveKernelIndex, data.Count / 1024 + data.Count % 1024, 1, 1);
         Walker[] resultData = new Walker[data.Count];
         agentsBuffer.GetData(resultData);
         data = resultData.ToList();
@@ -131,6 +151,20 @@ public class CrowdSimulator : MonoBehaviour
         agentsBuffer.Dispose();
     }
 
+    //~1 Ray per agent & 600 agents = ~30fps
+    private void MoveV2()
+    {
+        int moveKernelIndex = crowdSimulationShader.FindKernel("MoveV2");
+        ComputeBuffer agentsBuffer = new ComputeBuffer(data.Count, sizeof(float) * 26);
+        agentsBuffer.SetData<Walker>(data);
+        crowdSimulationShader.SetBuffer(moveKernelIndex, "Agents", agentsBuffer);
+        crowdSimulationShader.Dispatch(moveKernelIndex, data.Count / 1024 + data.Count % 1024, 1, 1);
+        Walker[] resultData = new Walker[data.Count];
+        agentsBuffer.GetData(resultData);
+        data = resultData.ToList();
+        UpdateAgents();
+        agentsBuffer.Dispose();
+    }
     private void RenderWorldStateTex()
     {
         int clearKernelIndex = crowdSimulationShader.FindKernel("ResetTex");
@@ -141,7 +175,7 @@ public class CrowdSimulator : MonoBehaviour
 
     private void TestMove()
     {
-        ComputeBuffer agentsBuffer = new ComputeBuffer(data.Count, sizeof(float) * 25);
+        ComputeBuffer agentsBuffer = new ComputeBuffer(data.Count, sizeof(float) * 26);
         agentsBuffer.SetData<Walker>(data);
         int moveKernelID = crowdSimulationShader.FindKernel("TestMove");
         crowdSimulationShader.SetBuffer(moveKernelID, "Agents", agentsBuffer);
@@ -153,6 +187,8 @@ public class CrowdSimulator : MonoBehaviour
         agentsBuffer.Dispose();
     }
 
+
+
     //project the agents colliders on to a texture.
     //doesnt work, dont know why :(
     //would be more efficient just to project a sphere for the collider than actually render a model to the texture
@@ -160,12 +196,15 @@ public class CrowdSimulator : MonoBehaviour
     {
         
         int initTextureKernelIndex = crowdSimulationShader.FindKernel("SetPositionsTex");
-        ComputeBuffer buffer = new ComputeBuffer(data.Count, sizeof(float) * 25);
+        ComputeBuffer buffer = new ComputeBuffer(data.Count, sizeof(float) * 26);
 
         buffer.SetData<Walker>(data);
         crowdSimulationShader.SetVector("screenSize", new Vector2(
-            dynamicObstaclesRenderTex.width,
-            dynamicObstaclesRenderTex.height));
+            obstacleProjectionCamera.scaledPixelWidth,
+            obstacleProjectionCamera.scaledPixelHeight));
+        crowdSimulationShader.SetVector("textureSize", new Vector2(
+            obstaclesTexture.width,
+            obstaclesTexture.height));
         crowdSimulationShader.SetBuffer(initTextureKernelIndex, "Agents", buffer);
         crowdSimulationShader.SetTexture(initTextureKernelIndex, "Result", dynamicObstaclesRenderTex);
         crowdSimulationShader.Dispatch(
@@ -201,7 +240,6 @@ public class CrowdSimulator : MonoBehaviour
     {
         foreach(Walker w in data)
         {
-
             idToController[w.id].transform.position = w.position;
         }
     }

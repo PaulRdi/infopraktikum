@@ -3,30 +3,44 @@
 #pragma kernel TestMove
 #pragma kernel ResetTex
 #pragma kernel Move
+#pragma kernel MoveV2
 
 struct Agent {
 	float3 position;
 	float3 orientation;
+	float colliderRadius;
 	float4x4 modelMatrix;
 	float speed;
 	float angularVelocity;
 	int id;
 };
 
+const float RAY_RESOLUTION = 12.0;
+const float RAY_ANGLE = 45.0;
 
+float GetNextAngle(
+	float lastAngle,
+	float maxAngle,
+	float rayStep,
+	float3 otherPosition,
+	float colliderRadius,
+	float3 direction,
+	float3 origin,
+	float rayResolution);
 
-// Create a RenderTexture with enableRandomWrite flag and set it
-RWTexture2D<float4> Result;
 RWStructuredBuffer<Agent> Agents;
 RWTexture2D<float4> WorldState;
 float4x4 INVERSE_MATRIX_VP;
 float4x4 MATRIX_VP;
+float4x4 CAMERA_MATRIX;
 float2 screenSize;
+float dt;
+float2 textureSize;
 
 [numthreads(32, 18, 1)]
 void ResetTex(uint3 id : SV_DispatchThreadID)
 {
-	WorldState[id.xy] = float4(0, 0, 0, 0);
+	WorldState[id.xy] = float4(0, 0, 0, 1);
 }
 
 [numthreads(32,18,1)]
@@ -50,9 +64,9 @@ void SetPositionsTex(uint3 id : SV_DispatchThreadID)
 	}
 
 	if (dist < 10)
-		Result[id.xy] = float4(1, 0, 1, 0);
+		WorldState[id.xy] = float4(1, 0, 1, 0);
 	else
-		Result[id.xy] = float4(1, 1, 1, 0);
+		WorldState[id.xy] = float4(1, 1, 1, 0);
 }
 
 [numthreads(1024, 1, 1)]
@@ -70,19 +84,29 @@ void TestMove(uint3 id : SV_DispatchThreadID)
 	Agents[id.x].position.xyz += Agents[id.x].orientation;
 }
 
+//texture based approach
+//performs poorly (15fps) with few traversed pixels and no actual avoidance logic. Probably because of first pass for object locations
 [numthreads(1024, 1, 1)]
 void Move(uint3 id : SV_DispatchThreadID)
 {
-	float4x4 mvp = mul(MATRIX_VP, Agents[id.x].modelMatrix);
 	float4 f4pos = float4(Agents[id.x].position.x, Agents[id.x].position.y, Agents[id.x].position.z, 1.0);
-	float4 screenPos = mul(mvp, f4pos);
 
-	int lerpedX = round(lerp(0, (int)screenSize.x, screenPos.x));
-	int lerpedY = round(lerp(0, (int)screenSize.y, screenPos.y));
+	//custom world space conversion | did this because I got desperate... was completely unnecessary :( stupid mistake in passing info to the shader
+	//https://www.scratchapixel.com/lessons/3d-basic-rendering/computing-pixel-coordinates-of-3d-point/mathematics-computing-2d-coordinates-of-3d-points
+	/*float4 cameraSpacePos = mul(CAMERA_MATRIX, f4pos);	
+	float2 screenPos = float2(cameraSpacePos.x / -cameraSpacePos.z, cameraSpacePos.y / -cameraSpacePos.z);
+	float2 ndcPos = float2((screenPos.x + screenSize.x / 2) / screenSize.x, (screenPos.y + screenSize.y / 2) / screenSize.y);
+	int lerpedX = round(lerp(0, (int)textureSize.x, ndcPos.x));
+	int lerpedY = round(lerp(0, (int)textureSize.y, 1-ndcPos.y));*/
 
-	for (int y = lerpedY - 50; y < lerpedY + 50; y++)
+
+	float4 screenPos = mul(MATRIX_VP, f4pos); //agents are spawned in world space so no model matrix  is needed
+	int lerpedX = round(lerp(0, (int)textureSize.x, screenPos.x));
+	int lerpedY = round(lerp(0, (int)textureSize.y, screenPos.y));
+
+	for (int y = lerpedY - 5; y < lerpedY + 5; y++)
 	{
-		for (int x = lerpedX - 50; x < lerpedX + 50; x++)
+		for (int x = lerpedX - 5; x < lerpedX + 5; x++)
 		{
 			if (x == lerpedX && y == lerpedY)
 				continue;
@@ -90,10 +114,120 @@ void Move(uint3 id : SV_DispatchThreadID)
 
 			if (distance(WorldState[uint2(x, y)], float4(1, 1, 1, 1)) < 0.1)
 			{
-				Agents[x].speed = 0;
+				Agents[id.x].speed = 0.0;
 			}
+			else {
+				Agents[id.x].speed = 1.0;
+
+			}
+
 		}
 	}
 	Agents[id.x].position += Agents[id.x].orientation * Agents[id.x].speed;
 
+}
+
+
+[numthreads(1024, 1, 1)]
+void MoveV2(uint3 id : SV_DispatchThreadID)
+{
+	float3 d = Agents[id.x].orientation;
+	float3 o = Agents[id.x].position;
+	Agents[id.x].angularVelocity = 0.0;
+	float freeLeft = -RAY_ANGLE - 1.0; //the minimum angle where no intersection was hit to the left
+	float freeRight = RAY_ANGLE + 1.0; //the maximum angle where no intersection happened to the right
+	bool foundOne = false;
+	for (int i = 0; i < Agents.Length; ++i)
+	{
+		//do not check against yourself
+		if (Agents[i].id == Agents[id.x].id)
+			continue;
+		if (length(o - Agents[i].position) > 2.0)
+			continue;
+
+		foundOne = true;
+		float dist = 100000.0;
+		for (int j = -RAY_RESOLUTION; j <= 0; ++j) //shoot rays from left to right in the specified angle with the specified resolution (numRays = resolution * 2 + 1)
+		{					
+			freeLeft = GetNextAngle(
+				freeLeft, 
+				-RAY_ANGLE, 
+				(float)j, 
+				Agents[i].position, 
+				Agents[i].colliderRadius, 
+				d, 
+				o, 
+				RAY_RESOLUTION);
+		}
+		for (int j = RAY_RESOLUTION; j >= 0; --j) //shoot rays from left to right in the specified angle with the specified resolution (numRays = resolution * 2 + 1)
+		{
+			freeRight = GetNextAngle(
+				freeRight, 
+				RAY_ANGLE, 
+				(float)j, 
+				Agents[i].position, 
+				Agents[i].colliderRadius, 
+				d, 
+				o, 
+				RAY_RESOLUTION);
+		}
+	}
+
+
+	//freeLeft = 1.0;
+	//freeRight = 1.0; //free left & free right are NaN
+
+	//get the minimum angle we have while still going straight
+	if (foundOne)
+	{
+		float angle = abs(freeLeft) < freeRight ? freeLeft : freeRight;
+		Agents[id.x].angularVelocity = lerp(Agents[id.x].angularVelocity, angle, 0.3);
+		//if (dist < 1.0)
+		//{
+		//	Agents[id.x].speed = lerp(Agents[id.x].speed, 1.0, 0.1);
+		//	Agents[id.x].angularVelocity = 5.0;
+		//}
+		//else
+		//{
+		//	Agents[id.x].speed = 4.0;
+		//	Agents[id.x].angularVelocity = 0.0;
+		//}
+		float rotAmt = radians(Agents[id.x].angularVelocity);
+		float3 dir = Agents[id.x].orientation;
+		Agents[id.x].orientation = float3(
+			dir.x * cos(rotAmt) - dir.z * sin(rotAmt),
+			0,
+			dir.x * sin(rotAmt) + dir.z * cos(rotAmt));
+	}
+	Agents[id.x].position += Agents[id.x].orientation * Agents[id.x].speed * dt;
+
+}
+
+float GetNextAngle(
+	float lastAngle, 
+	float maxAngle, 
+	float rayStep, 
+	float3 otherPosition, 
+	float colliderRadius,
+	float3 direction, 
+	float3 origin, 
+	float rayResolution)
+{
+	if (rayResolution == 0.0)
+		rayResolution = 1.0;
+	float currAngle = lerp(maxAngle, 0, abs(rayStep) / rayResolution);
+	float currAngleRad = radians(currAngle);
+	float3 rotatedRayDir = float3(
+		direction.x * cos(currAngleRad) - direction.z * sin(currAngleRad),
+		0.0,
+		direction.x * sin(currAngleRad) + direction.z * cos(currAngleRad));
+	float3 ray = origin + (rotatedRayDir - origin);
+
+	float currDist = length(cross(ray, otherPosition - origin));
+	//if we didnt hit anything update the free angle
+	if (currDist > colliderRadius)
+	{
+		return currAngle;
+	}
+	return lastAngle;
 }
