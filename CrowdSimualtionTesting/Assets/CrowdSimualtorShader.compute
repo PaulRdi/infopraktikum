@@ -4,6 +4,7 @@
 #pragma kernel ResetTex
 #pragma kernel Move
 #pragma kernel MoveV2
+#pragma kernel AvoidStaticObstacles
 
 struct Agent {
 	float3 position;
@@ -29,6 +30,8 @@ float GetNextAngle(
 
 RWStructuredBuffer<Agent> Agents;
 RWTexture2D<float4> WorldState;
+Texture2D<float4> WorldStateStatic;
+float4x4 INVERSE_MATRIX_P;
 float4x4 INVERSE_MATRIX_VP;
 float4x4 MATRIX_VP;
 float4x4 CAMERA_MATRIX;
@@ -72,16 +75,16 @@ void SetPositionsTex(uint3 id : SV_DispatchThreadID)
 [numthreads(1024, 1, 1)]
 void TestMove(uint3 id : SV_DispatchThreadID)
 {
-	Agents[id.x].angularVelocity = 3.0;
+	//Agents[id.x].angularVelocity = 3.0;
 
-	float rotAmt = radians(3.0);
-	float3 dir = Agents[id.x].orientation;
-	Agents[id.x].orientation = float3(
-		dir.x * cos(rotAmt) - dir.z * sin(rotAmt),
-		0,
-		dir.x * sin(rotAmt) + dir.z * cos(rotAmt));
+	//float rotAmt = radians(3.0);
+	//float3 dir = Agents[id.x].orientation;
+	//Agents[id.x].orientation = float3(
+	//	dir.x * cos(rotAmt) - dir.z * sin(rotAmt),
+	//	0,
+	//	dir.x * sin(rotAmt) + dir.z * cos(rotAmt));
 
-	Agents[id.x].position.xyz += Agents[id.x].orientation;
+	Agents[id.x].position.xyz += Agents[id.x].orientation * Agents[id.x].speed * dt;
 }
 
 //texture based approach
@@ -91,7 +94,7 @@ void Move(uint3 id : SV_DispatchThreadID)
 {
 	float4 f4pos = float4(Agents[id.x].position.x, Agents[id.x].position.y, Agents[id.x].position.z, 1.0);
 
-	//custom world space conversion | did this because I got desperate... was completely unnecessary :( stupid mistake in passing info to the shader
+	//custom pixel space conversion | did this because I got desperate... was completely unnecessary :( stupid mistake in passing info to the shader
 	//https://www.scratchapixel.com/lessons/3d-basic-rendering/computing-pixel-coordinates-of-3d-point/mathematics-computing-2d-coordinates-of-3d-points
 	/*float4 cameraSpacePos = mul(CAMERA_MATRIX, f4pos);	
 	float2 screenPos = float2(cameraSpacePos.x / -cameraSpacePos.z, cameraSpacePos.y / -cameraSpacePos.z);
@@ -100,7 +103,7 @@ void Move(uint3 id : SV_DispatchThreadID)
 	int lerpedY = round(lerp(0, (int)textureSize.y, 1-ndcPos.y));*/
 
 
-	float4 screenPos = mul(MATRIX_VP, f4pos); //agents are spawned in world space so no model matrix  is needed
+	float4 screenPos = mul(MATRIX_VP, f4pos); //agents are spawned in world space so no model matrix is needed
 	int lerpedX = round(lerp(0, (int)textureSize.x, screenPos.x));
 	int lerpedY = round(lerp(0, (int)textureSize.y, screenPos.y));
 
@@ -127,6 +130,56 @@ void Move(uint3 id : SV_DispatchThreadID)
 
 }
 
+[numthreads(1024,1,1)]
+void AvoidStaticObstacles(uint3 id : SV_DispatchThreadID)
+{
+	//float3 pos = Agents[id.x].position + Agents[id.x].orientation * Agents[id.x].speed * dt;
+	float3 pos = Agents[id.x].position;
+	float4 f4pos = float4(pos.x, pos.y, pos.z, 1.0);
+	float4 screenPos = mul(MATRIX_VP, f4pos);
+	int lerpedX = round(lerp(0, (int)textureSize.x, screenPos.x));
+	int lerpedY = round(lerp(0, (int)textureSize.y, screenPos.y));
+	//check 5x5 pixel box around position for obstacles
+	/*
+   -2-1 0 1 2
+	o o o o o
+	o o o o o
+	o o X o o 
+	o o o o o
+	o o o o o
+	-> if all is free dont adjust direction.
+	-> otherwise adjust direction to where more is free
+	*/
+	float2 dirFree = float2(0.0, 0.0);
+	int checkRange = 6;
+	for (int y = lerpedY - checkRange; y <= lerpedY + checkRange; y++)
+	{
+		for (int x = lerpedX - checkRange; x <= lerpedX + checkRange; x++)
+		{
+			int dx = x - lerpedX;
+			int dy = y - lerpedY;
+			if (distance(WorldState[uint2(x, y)].xyz, float3(1, 1, 1)) > 0.1)
+			{
+				dirFree.x += (float)sign(dx);
+				dirFree.y += (float)sign(dy);
+			}
+			else {
+				WorldState[uint2(x, y)] = float4(1, 0, 1, 1);
+			}
+		}
+	}
+	if (length(dirFree) > 0.0)
+		WorldState[uint2(lerpedX, lerpedY)] = float4(1, 0, 0, 1);
+
+	dirFree.x = dirFree.x / textureSize.x;
+	dirFree.y = dirFree.y / textureSize.y;
+	float4 realDir = mul(float4(dirFree.x, dirFree.y, 0.0, 0.0), INVERSE_MATRIX_VP);
+	if (length(realDir) > 0.0)
+		WorldState[uint2(lerpedX, lerpedY)] = float4(0, 1, 0, 1);
+
+	Agents[id.x].orientation = normalize(Agents[id.x].orientation + realDir.xyz);
+	//Agents[id.x].orientation = float3(0.0, 0.0, 0.0);
+}
 
 [numthreads(1024, 1, 1)]
 void MoveV2(uint3 id : SV_DispatchThreadID)
@@ -147,7 +200,7 @@ void MoveV2(uint3 id : SV_DispatchThreadID)
 
 		foundOne = true;
 		float dist = 100000.0;
-		for (float j = -RAY_RESOLUTION; j <= 0; ++j) //shoot rays from left to right in the specified angle with the specified resolution (numRays = resolution * 2 + 1)
+		for (float j = -RAY_RESOLUTION; j <= 0; ++j) //shoot rays from left to center in the specified angle with the specified resolution
 		{					
 			freeLeft = GetNextAngle(
 				freeLeft, 
@@ -159,7 +212,7 @@ void MoveV2(uint3 id : SV_DispatchThreadID)
 				o, 
 				RAY_RESOLUTION);
 		}
-		for (float j = RAY_RESOLUTION; j >= 0; --j) //shoot rays from left to right in the specified angle with the specified resolution (numRays = resolution * 2 + 1)
+		for (float j = RAY_RESOLUTION; j >= 0; --j) //shoot rays from right to center in the specified angle with the specified resolution
 		{
 			freeRight = GetNextAngle(
 				freeRight, 
@@ -178,10 +231,10 @@ void MoveV2(uint3 id : SV_DispatchThreadID)
 	//freeRight = 1.0; //free left & free right are NaN
 
 	//get the minimum angle we have while still going straight
+	float angle = Agents[id.x].angularVelocity;
 	if (foundOne)
 	{
-		float angle = abs(freeLeft) < freeRight ? freeLeft : freeRight;
-		Agents[id.x].angularVelocity = lerp(Agents[id.x].angularVelocity, angle, 0.3);
+		angle = abs(freeLeft) < freeRight ? freeLeft : freeRight;
 		//if (dist < 1.0)
 		//{
 		//	Agents[id.x].speed = lerp(Agents[id.x].speed, 1.0, 0.1);
@@ -192,13 +245,24 @@ void MoveV2(uint3 id : SV_DispatchThreadID)
 		//	Agents[id.x].speed = 4.0;
 		//	Agents[id.x].angularVelocity = 0.0;
 		//}
-		float rotAmt = radians(Agents[id.x].angularVelocity);
-		float3 dir = Agents[id.x].orientation;
-		Agents[id.x].orientation = float3(
-			dir.x * cos(rotAmt) - dir.z * sin(rotAmt),
-			0,
-			dir.x * sin(rotAmt) + dir.z * cos(rotAmt));
 	}
+	Agents[id.x].angularVelocity = lerp(Agents[id.x].angularVelocity, angle, 0.3);
+	//if (dist < 1.0)
+	//{
+	//	Agents[id.x].speed = lerp(Agents[id.x].speed, 1.0, 0.1);
+	//	Agents[id.x].angularVelocity = 5.0;
+	//}
+	//else
+	//{
+	//	Agents[id.x].speed = 4.0;
+	//	Agents[id.x].angularVelocity = 0.0;
+	//}
+	float rotAmt = radians(Agents[id.x].angularVelocity);
+	float3 dir = Agents[id.x].orientation;
+	Agents[id.x].orientation = float3(
+		dir.x * cos(rotAmt) - dir.z * sin(rotAmt),
+		0,
+		dir.x * sin(rotAmt) + dir.z * cos(rotAmt));
 	Agents[id.x].position += Agents[id.x].orientation * Agents[id.x].speed * dt;
 
 }
