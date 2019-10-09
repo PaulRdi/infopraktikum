@@ -83,7 +83,6 @@ public class CrowdSimulator : MonoBehaviour
             Walker walker = new Walker();
             walker.orientation = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0, UnityEngine.Random.Range(-1f, 1f)).normalized;
             walker.id = id;
-            walker.localToWorld = agents[id].transform.localToWorldMatrix;
             walker.position = agents[id].transform.position;
             walker.speed = 3.0f;
             walker.colliderRadius = 1.0f;
@@ -106,6 +105,7 @@ public class CrowdSimulator : MonoBehaviour
         crowdSimulationShader.SetMatrix("INVERSE_MATRIX_VP", vp.inverse);
         crowdSimulationShader.SetMatrix("INVERSE_MATRIX_P", p.inverse);
         crowdSimulationShader.SetFloat("dt", Time.deltaTime);
+        crowdSimulationShader.SetFloat("resolutionScale", resolutionScale);
         crowdSimulationShader.SetVector("screenSize", new Vector2(
             obstacleProjectionCamera.scaledPixelWidth,
             obstacleProjectionCamera.scaledPixelHeight));
@@ -119,8 +119,8 @@ public class CrowdSimulator : MonoBehaviour
         Walker[] resultData = new Walker[data.Count];
 
         AvoidStaticObstales(ref agentsBuffer);
-        //MoveV2(ref agentsBuffer);
-        TestMove(ref agentsBuffer);
+        MoveV2(ref agentsBuffer);
+        //TestMove(ref agentsBuffer);
 
 
         agentsBuffer.GetData(resultData);
@@ -154,9 +154,9 @@ public class CrowdSimulator : MonoBehaviour
         for (int i = 0; i < numAgents; i++)
         {
             agents.Add(Instantiate(agentPrefab, new Vector3(
-                UnityEngine.Random.Range(-50f, 50f),
+                UnityEngine.Random.Range(-19f, 19f),
                 0f,
-                UnityEngine.Random.Range(-50f, 50f)), Quaternion.identity).GetComponent<AgentController>());
+                UnityEngine.Random.Range(-19f, 19f)), Quaternion.identity).GetComponent<AgentController>());
         }
     }
 
@@ -245,9 +245,12 @@ public class CrowdSimulator : MonoBehaviour
     }
     void UpdateAgents()
     {
-        foreach(Walker w in data)
+        for (int i = 0; i < data.Count; i++)
         {
+            Walker w = data[i];
             idToController[w.id].transform.position = w.position;
+            w.localToWorld = idToController[w.id].transform.localToWorldMatrix;
+            w.position = idToController[w.id].transform.position;
         }
     }
 }

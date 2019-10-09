@@ -8,6 +8,7 @@
 
 struct Agent {
 	float3 position;
+
 	float3 orientation;
 	float colliderRadius;
 	float4x4 modelMatrix;
@@ -28,6 +29,11 @@ float GetNextAngle(
 	float3 origin,
 	float rayResolution);
 
+float4x4 inverse(float4x4 mat);
+
+bool OutOfBounds(int x, int y, int maxX, int maxY);
+
+
 RWStructuredBuffer<Agent> Agents;
 RWTexture2D<float4> WorldState;
 Texture2D<float4> WorldStateStatic;
@@ -37,6 +43,7 @@ float4x4 MATRIX_VP;
 float4x4 CAMERA_MATRIX;
 float2 screenSize;
 float dt;
+float resolutionScale;
 float2 textureSize;
 float RAY_RESOLUTION;
 float RAY_ANGLE;
@@ -102,10 +109,11 @@ void Move(uint3 id : SV_DispatchThreadID)
 	int lerpedX = round(lerp(0, (int)textureSize.x, ndcPos.x));
 	int lerpedY = round(lerp(0, (int)textureSize.y, 1-ndcPos.y));*/
 
+	float4x4 mvp = mul(MATRIX_VP, Agents[id.x].modelMatrix);
+	float4 screenPos = mul(mvp, f4pos); //agents are spawned in world space so no model matrix is needed
 
-	float4 screenPos = mul(MATRIX_VP, f4pos); //agents are spawned in world space so no model matrix is needed
-	int lerpedX = round(lerp(0, (int)textureSize.x, screenPos.x));
-	int lerpedY = round(lerp(0, (int)textureSize.y, screenPos.y));
+	int lerpedX = round(lerp(0, (int)textureSize.x, 0.5*(1+screenPos.x)));
+	int lerpedY = round(lerp(0, (int)textureSize.y, 0.5*(1+screenPos.y)));
 
 	for (int y = lerpedY - 5; y < lerpedY + 5; y++)
 	{
@@ -133,12 +141,13 @@ void Move(uint3 id : SV_DispatchThreadID)
 [numthreads(1024,1,1)]
 void AvoidStaticObstacles(uint3 id : SV_DispatchThreadID)
 {
-	//float3 pos = Agents[id.x].position + Agents[id.x].orientation * Agents[id.x].speed * dt;
-	float3 pos = Agents[id.x].position;
+	float3 pos = Agents[id.x].position + Agents[id.x].orientation * Agents[id.x].speed * dt;
+	//float3 pos = Agents[id.x].position;
 	float4 f4pos = float4(pos.x, pos.y, pos.z, 1.0);
+	
 	float4 screenPos = mul(MATRIX_VP, f4pos);
-	int lerpedX = round(lerp(0, (int)textureSize.x, screenPos.x));
-	int lerpedY = round(lerp(0, (int)textureSize.y, screenPos.y));
+	int lerpedX = round(lerp(0, textureSize.x, 0.5 * (1 + screenPos.x)));
+	int lerpedY = round(lerp(0, textureSize.y, 0.5 * (1 + screenPos.y)));
 	//check 5x5 pixel box around position for obstacles
 	/*
    -2-1 0 1 2
@@ -151,17 +160,18 @@ void AvoidStaticObstacles(uint3 id : SV_DispatchThreadID)
 	-> otherwise adjust direction to where more is free
 	*/
 	float2 dirFree = float2(0.0, 0.0);
-	int checkRange = 6;
+	int checkRange = 3;
 	for (int y = lerpedY - checkRange; y <= lerpedY + checkRange; y++)
 	{
 		for (int x = lerpedX - checkRange; x <= lerpedX + checkRange; x++)
 		{
-			int dx = x - lerpedX;
-			int dy = y - lerpedY;
-			if (distance(WorldState[uint2(x, y)].xyz, float3(1, 1, 1)) > 0.1)
+			float dx = x - lerpedX;
+			float dy = y - lerpedY;
+
+			if (OutOfBounds(x,y, (int)textureSize.x, (int)textureSize.y) || 
+				distance(WorldState[uint2(x, y)].xyz, float3(1, 1, 1)) > 0.1)
 			{
-				dirFree.x += (float)sign(dx);
-				dirFree.y += (float)sign(dy);
+				dirFree += float2(dx, dy);	
 			}
 			else {
 				WorldState[uint2(x, y)] = float4(1, 0, 1, 1);
@@ -169,16 +179,17 @@ void AvoidStaticObstacles(uint3 id : SV_DispatchThreadID)
 		}
 	}
 	if (length(dirFree) > 0.0)
-		WorldState[uint2(lerpedX, lerpedY)] = float4(1, 0, 0, 1);
+	{
+		dirFree.x = 2 * dirFree.x / (float)textureSize.x - 1;
+		dirFree.y = 2 * dirFree.y / (float)textureSize.y - 1;
+		float4 realDir = mul(float4(dirFree.x, dirFree.y, 0.0, 1.0), INVERSE_MATRIX_VP);
+		if (length(realDir) > 0.0)
+		{
+			WorldState[uint2(lerpedX, lerpedY)] = float4(0, 1, 0, 1);
+			Agents[id.x].orientation = float3(-Agents[id.x].orientation.z, 0, Agents[id.x].orientation.x);
+		}
+	}
 
-	dirFree.x = dirFree.x / textureSize.x;
-	dirFree.y = dirFree.y / textureSize.y;
-	float4 realDir = mul(float4(dirFree.x, dirFree.y, 0.0, 0.0), INVERSE_MATRIX_VP);
-	if (length(realDir) > 0.0)
-		WorldState[uint2(lerpedX, lerpedY)] = float4(0, 1, 0, 1);
-
-	Agents[id.x].orientation = normalize(Agents[id.x].orientation + realDir.xyz);
-	//Agents[id.x].orientation = float3(0.0, 0.0, 0.0);
 }
 
 [numthreads(1024, 1, 1)]
@@ -212,12 +223,12 @@ void MoveV2(uint3 id : SV_DispatchThreadID)
 				o, 
 				RAY_RESOLUTION);
 		}
-		for (float j = RAY_RESOLUTION; j >= 0; --j) //shoot rays from right to center in the specified angle with the specified resolution
+		for (float c = RAY_RESOLUTION; c >= 0; --c) //shoot rays from right to center in the specified angle with the specified resolution
 		{
 			freeRight = GetNextAngle(
 				freeRight, 
 				RAY_ANGLE, 
-				j, 
+				c, 
 				Agents[i].position, 
 				Agents[i].colliderRadius, 
 				d, 
@@ -266,7 +277,10 @@ void MoveV2(uint3 id : SV_DispatchThreadID)
 	Agents[id.x].position += Agents[id.x].orientation * Agents[id.x].speed * dt;
 
 }
-
+bool OutOfBounds(int x, int y, int maxX, int maxY)
+{
+	return x < 0 || x >= textureSize.x || y < 0 || y >= textureSize.y;
+}
 float GetNextAngle(
 	float lastAngle, 
 	float maxAngle, 
@@ -292,4 +306,34 @@ float GetNextAngle(
 		return currAngle;
 	}
 	return lastAngle;
+}
+//https://answers.unity.com/questions/218333/index.html
+float4x4 inverse(float4x4 input)
+{
+#define minor(a,b,c) determinant(float3x3(input.a, input.b, input.c))
+	//determinant(float3x3(input._22_23_23, input._32_33_34, input._42_43_44))
+
+	float4x4 cofactors = float4x4(
+		minor(_22_23_24, _32_33_34, _42_43_44),
+		-minor(_21_23_24, _31_33_34, _41_43_44),
+		minor(_21_22_24, _31_32_34, _41_42_44),
+		-minor(_21_22_23, _31_32_33, _41_42_43),
+
+		-minor(_12_13_14, _32_33_34, _42_43_44),
+		minor(_11_13_14, _31_33_34, _41_43_44),
+		-minor(_11_12_14, _31_32_34, _41_42_44),
+		minor(_11_12_13, _31_32_33, _41_42_43),
+
+		minor(_12_13_14, _22_23_24, _42_43_44),
+		-minor(_11_13_14, _21_23_24, _41_43_44),
+		minor(_11_12_14, _21_22_24, _41_42_44),
+		-minor(_11_12_13, _21_22_23, _41_42_43),
+
+		-minor(_12_13_14, _22_23_24, _32_33_34),
+		minor(_11_13_14, _21_23_24, _31_33_34),
+		-minor(_11_12_14, _21_22_24, _31_32_34),
+		minor(_11_12_13, _21_22_23, _31_32_33)
+		);
+#undef minor
+	return transpose(cofactors) / determinant(input);
 }
