@@ -316,60 +316,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &384607604
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 384607605}
-  - component: {fileID: 384607606}
-  m_Layer: 0
-  m_Name: CrowdSimulatorTester
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &384607605
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 384607604}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &384607606
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 384607604}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 04d462dabde27c041aac0fb1f1926e2b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  obstaclesTexture: {fileID: 0}
-  dynamicObstaclesRenderTex: {fileID: 0}
-  obstacleProjectionCamera: {fileID: 1049713691}
-  crowdSimulationShader: {fileID: 7200000, guid: 24a8e92656531b740bd4838baafb2d36,
-    type: 3}
-  resolutionScale: 8
-  obstaclesShader: {fileID: 10755, guid: 0000000000000000f000000000000000, type: 0}
-  agentPrefab: {fileID: 4964688430170903462, guid: dad49c7f36e4bfc49a14275e07bd4b92,
-    type: 3}
-  debugImg: {fileID: 657610523}
-  numAgents: 650
 --- !u!1 &438571098
 GameObject:
   m_ObjectHideFlags: 0
@@ -1562,3 +1508,92 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1823367601}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &2245164616430893702
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2245164616794447858, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: m_Name
+      value: CrowdSimulatorTester
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447859, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447859, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447859, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447859, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447859, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447859, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447859, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447859, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447859, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447859, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447859, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447856, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: obstacleProjectionCamera
+      value: 
+      objectReference: {fileID: 1049713691}
+    - target: {fileID: 2245164616794447856, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: debugImg
+      value: 
+      objectReference: {fileID: 657610523}
+    - target: {fileID: 2245164616794447856, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: resolutionScale
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2245164616794447856, guid: 520e9b577c5890349903e84841328e10,
+        type: 3}
+      propertyPath: numAgents
+      value: 2000
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 520e9b577c5890349903e84841328e10, type: 3}

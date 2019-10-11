@@ -5,10 +5,10 @@
 #pragma kernel Move
 #pragma kernel MoveV2
 #pragma kernel AvoidStaticObstacles
+#pragma enable_d3d11_debug_symbols
 
 struct Agent {
 	float3 position;
-
 	float3 orientation;
 	float colliderRadius;
 	float4x4 modelMatrix;
@@ -17,7 +17,12 @@ struct Agent {
 	int id;
 };
 
-
+bool IntersectCircle(
+	float3 d,
+	float3 o,
+	float3 otherPosition,
+	float otherColliderRadius
+);
 
 float GetNextAngle(
 	float lastAngle,
@@ -28,6 +33,24 @@ float GetNextAngle(
 	float3 direction,
 	float3 origin,
 	float rayResolution);
+
+float FindFreeAngle(
+	float minAngle,
+	float maxAngle,
+	float3 otherPosition,
+	float colliderRadius,
+	float3 direction,
+	float3 origin,
+	float rayResolution);
+
+int FindFreeAngleV2(
+	float maxAngle,
+	float3 otherPosition,
+	float colliderRadius,
+	float3 direction,
+	float3 origin,
+	float rayResolution
+);
 
 float4x4 inverse(float4x4 mat);
 
@@ -45,8 +68,8 @@ float2 screenSize;
 float dt;
 float resolutionScale;
 float2 textureSize;
-float RAY_RESOLUTION;
 float RAY_ANGLE;
+float RAY_RESOLUTION;
 [numthreads(32, 18, 1)]
 void ResetTex(uint3 id : SV_DispatchThreadID)
 {
@@ -113,7 +136,7 @@ void Move(uint3 id : SV_DispatchThreadID)
 	float4 screenPos = mul(mvp, f4pos); //agents are spawned in world space so no model matrix is needed
 
 	int lerpedX = round(lerp(0, (int)textureSize.x, 0.5*(1+screenPos.x)));
-	int lerpedY = round(lerp(0, (int)textureSize.y, 0.5*(1+screenPos.y)));
+	int lerpedY = round(lerp((int)textureSize.y, 0, 0.5*(1+screenPos.y)));
 
 	for (int y = lerpedY - 5; y < lerpedY + 5; y++)
 	{
@@ -147,20 +170,20 @@ void AvoidStaticObstacles(uint3 id : SV_DispatchThreadID)
 	
 	float4 screenPos = mul(MATRIX_VP, f4pos);
 	int lerpedX = round(lerp(0, textureSize.x, 0.5 * (1 + screenPos.x)));
-	int lerpedY = round(lerp(0, textureSize.y, 0.5 * (1 + screenPos.y)));
-	//check 5x5 pixel box around position for obstacles
+	int lerpedY = round(lerp(textureSize.y, 0, 0.5 * (1 + screenPos.y))); //y-axis is flipped for texture (is this some d3d stuff??)
+	//check nxn pixel box around position for obstacles
 	/*
    -2-1 0 1 2
-	o o o o o
-	o o o o o
-	o o X o o 
+	~ o o o o
+	~ ~ o o o
+	~ ~ X o o 
 	o o o o o
 	o o o o o
 	-> if all is free dont adjust direction.
-	-> otherwise adjust direction to where more is free
+	-> otherwise adjust direction to where more is free (use inverse vector of balance point)
 	*/
 	float2 dirFree = float2(0.0, 0.0);
-	int checkRange = 3;
+	int checkRange = 8;
 	for (int y = lerpedY - checkRange; y <= lerpedY + checkRange; y++)
 	{
 		for (int x = lerpedX - checkRange; x <= lerpedX + checkRange; x++)
@@ -174,7 +197,7 @@ void AvoidStaticObstacles(uint3 id : SV_DispatchThreadID)
 				dirFree += float2(dx, dy);	
 			}
 			else {
-				WorldState[uint2(x, y)] = float4(1, 0, 1, 1);
+				//WorldState[uint2(x, y)] = float4(1, 0, 1, 1);
 			}
 		}
 	}
@@ -185,58 +208,77 @@ void AvoidStaticObstacles(uint3 id : SV_DispatchThreadID)
 		float4 realDir = mul(float4(dirFree.x, dirFree.y, 0.0, 1.0), INVERSE_MATRIX_VP);
 		if (length(realDir) > 0.0)
 		{
-			WorldState[uint2(lerpedX, lerpedY)] = float4(0, 1, 0, 1);
 			Agents[id.x].orientation = float3(-Agents[id.x].orientation.z, 0, Agents[id.x].orientation.x);
 		}
 	}
 
 }
 
-[numthreads(1024, 1, 1)]
+[numthreads(128, 1, 1)]
 void MoveV2(uint3 id : SV_DispatchThreadID)
 {
 	float3 d = Agents[id.x].orientation;
 	float3 o = Agents[id.x].position;
 	Agents[id.x].angularVelocity = 0.0;
-	float freeLeft = -RAY_ANGLE - 1.0; //the minimum angle where no intersection was hit to the left
-	float freeRight = RAY_ANGLE + 1.0; //the maximum angle where no intersection happened to the right
-	bool foundOne = false;
+	//float freeLeft = -RAY_ANGLE - 1.0; //the minimum angle where no intersection was hit to the left
+	//float freeRight = RAY_ANGLE + 1.0; //the maximum angle where no intersection happened to the right
+
+	float freeAngle = 1000.0;
+	bool foundOne = true;
+
+	bool freeAngles[30 * 2 + 1];
+	for (int c = 0; c < freeAngles.Length; ++c)
+		freeAngles[c] = true;
+
 	for (int i = 0; i < Agents.Length; ++i)
 	{
 		//do not check against yourself
 		if (Agents[i].id == Agents[id.x].id)
 			continue;
-		if (length(o - Agents[i].position) > 2.0)
+		float3 ab = o - Agents[i].position;
+		if (dot(ab, ab) > 4.0)
 			continue;
+		float3 orientationOther = Agents[i].orientation;
+		if (acos(dot(orientationOther, d)) < radians(5.0f))	//if the other agent is travelling in roughly the same direction as we are, igore 
+			continue;											//since orientation is normalized we dont need to devide by length
 
+			
 		foundOne = true;
 		float dist = 100000.0;
-		for (float j = -RAY_RESOLUTION; j <= 0; ++j) //shoot rays from left to center in the specified angle with the specified resolution
-		{					
-			freeLeft = GetNextAngle(
-				freeLeft, 
-				-RAY_ANGLE, 
-				j, 
-				Agents[i].position, 
-				Agents[i].colliderRadius, 
-				d, 
-				o, 
-				RAY_RESOLUTION);
-		}
-		for (float c = RAY_RESOLUTION; c >= 0; --c) //shoot rays from right to center in the specified angle with the specified resolution
-		{
-			freeRight = GetNextAngle(
-				freeRight, 
-				RAY_ANGLE, 
-				c, 
-				Agents[i].position, 
-				Agents[i].colliderRadius, 
-				d, 
-				o, 
-				RAY_RESOLUTION);
-		}
-	}
 
+		int angleForCurrentCheck = FindFreeAngleV2(		//check the angle at which the current agent blocks the path and return the angle index
+			RAY_ANGLE,
+			Agents[i].position,
+			Agents[i].colliderRadius,
+			d,
+			o,
+			RAY_RESOLUTION);
+
+		if (angleForCurrentCheck != -1)
+			freeAngles[angleForCurrentCheck] = false;
+
+
+		/*freeLeft = FindFreeAngle(
+			freeLeft,
+			-RAY_ANGLE,
+			Agents[i].position,
+			Agents[i].colliderRadius,
+			d,
+			o,
+			RAY_RESOLUTION
+		);
+		freeRight = FindFreeAngle(
+			freeRight,
+			RAY_ANGLE,
+			Agents[i].position,
+			Agents[i].colliderRadius,
+			d,
+			o,
+			RAY_RESOLUTION
+		);*/
+
+
+	}
 
 	//freeLeft = 1.0;
 	//freeRight = 1.0; //free left & free right are NaN
@@ -245,7 +287,21 @@ void MoveV2(uint3 id : SV_DispatchThreadID)
 	float angle = Agents[id.x].angularVelocity;
 	if (foundOne)
 	{
-		angle = abs(freeLeft) < freeRight ? freeLeft : freeRight;
+		for (int i = 0; i < RAY_RESOLUTION; i++)
+		{
+			int a = RAY_RESOLUTION - i;
+			int b = RAY_RESOLUTION + i;
+			if (freeAngles[a] == true)
+			{
+				angle = lerp(-RAY_ANGLE, RAY_ANGLE, (float)a/(float)(2.0*RAY_RESOLUTION));
+				break;
+			}
+			else if (freeAngles[b] == true)
+			{
+				angle = lerp(-RAY_ANGLE, RAY_ANGLE, (float)a/(float)(2.0*RAY_RESOLUTION));
+				break;
+			}
+		}
 		//if (dist < 1.0)
 		//{
 		//	Agents[id.x].speed = lerp(Agents[id.x].speed, 1.0, 0.1);
@@ -256,8 +312,11 @@ void MoveV2(uint3 id : SV_DispatchThreadID)
 		//	Agents[id.x].speed = 4.0;
 		//	Agents[id.x].angularVelocity = 0.0;
 		//}
+		Agents[id.x].angularVelocity = lerp(Agents[id.x].angularVelocity, angle, 1.0);
 	}
-	Agents[id.x].angularVelocity = lerp(Agents[id.x].angularVelocity, angle, 0.3);
+	else
+		Agents[id.x].angularVelocity = lerp(Agents[id.x].angularVelocity, 0.0, 0.3);
+
 	//if (dist < 1.0)
 	//{
 	//	Agents[id.x].speed = lerp(Agents[id.x].speed, 1.0, 0.1);
@@ -281,6 +340,8 @@ bool OutOfBounds(int x, int y, int maxX, int maxY)
 {
 	return x < 0 || x >= textureSize.x || y < 0 || y >= textureSize.y;
 }
+
+//v0 this is very inefficient because we always shoot all rays.
 float GetNextAngle(
 	float lastAngle, 
 	float maxAngle, 
@@ -297,9 +358,8 @@ float GetNextAngle(
 		direction.x * cos(currAngleRad) - direction.z * sin(currAngleRad),
 		0.0,
 		direction.x * sin(currAngleRad) + direction.z * cos(currAngleRad));
-	float3 ray = origin + (rotatedRayDir - origin);
 
-	float currDist = length(cross(ray, otherPosition - origin));
+	float currDist = length(cross(rotatedRayDir, otherPosition - origin));
 	//if we didnt hit anything update the free angle
 	if (currDist > colliderRadius)
 	{
@@ -307,6 +367,81 @@ float GetNextAngle(
 	}
 	return lastAngle;
 }
+
+float FindFreeAngle(
+	float currAngle,
+	float maxAngle,
+	float3 otherPosition,
+	float colliderRadius,
+	float3 direction,
+	float3 origin,
+	float rayResolution) 
+{
+	float output = currAngle;
+	float step = sign(maxAngle);
+	for (float j = 0; j < rayResolution; j++)
+	{
+		output = GetNextAngle(
+			output,
+			maxAngle,
+			j,
+			otherPosition,
+			colliderRadius,
+			direction,
+			origin,
+			rayResolution);
+	}
+	return output;
+}
+
+int FindFreeAngleV2(
+	float maxAngle,
+	float3 otherPosition,
+	float colliderRadius,
+	float3 direction,
+	float3 origin,
+	float rayResolution
+)
+{
+	for (int j = 0; j < rayResolution; j++)
+	{
+		float angle = lerp(0, maxAngle, (float)j / rayResolution);
+		float currAngleRad = radians(angle);
+		float3 rayDir = float3(
+			direction.x * cos(currAngleRad) - direction.z * sin(currAngleRad),
+			0.0,
+			direction.x * sin(currAngleRad) + direction.z * cos(currAngleRad));
+
+		if (IntersectCircle(rayDir, origin, otherPosition, colliderRadius))
+		{
+			return (int)rayResolution + j;
+		}
+		if (j == 0) continue; //center ray only needs to be checked once
+
+		currAngleRad = radians(-angle);
+		rayDir = float3(
+			direction.x * cos(currAngleRad) - direction.z * sin(currAngleRad),
+			0.0,
+			direction.x * sin(currAngleRad) + direction.z * cos(currAngleRad));
+
+		if (IntersectCircle(rayDir, origin, otherPosition, colliderRadius))
+		{
+			return (int)rayResolution - j;
+		}
+	}
+
+	return -1;
+}
+
+bool IntersectCircle(
+	float3 d,
+	float3 o,
+	float3 otherPosition,
+	float otherColliderRadius)
+{
+	return length(cross(d, otherPosition - o)) < otherColliderRadius;
+}
+
 //https://answers.unity.com/questions/218333/index.html
 float4x4 inverse(float4x4 input)
 {

@@ -32,7 +32,7 @@ array on the GPU."
     -> camera for each walker is inefficient (especially with many obstacles / vertices)
     -> 2d plane of movement -> texture (for static environment) + radii for dynamic walkers
  * */
-
+[Serializable]
 public struct Walker
 {
     public Vector3 position;
@@ -57,6 +57,7 @@ public class CrowdSimulator : MonoBehaviour
     [SerializeField] GameObject agentPrefab;
     [SerializeField] RawImage debugImg;
     [SerializeField] int numAgents = 1000;
+    [SerializeField] bool generateAgentsOnSpawn = true;
 
     List<Walker> data;
     List<AgentController> agents;
@@ -67,7 +68,10 @@ public class CrowdSimulator : MonoBehaviour
     {
         agents = new List<AgentController>();
 
-        CreateRandomAgents();
+        if (generateAgentsOnSpawn)
+            CreateRandomAgents();
+        else
+            agents = FindObjectsOfType<AgentController>().ToList();
 
         idToController = new Dictionary<int, AgentController>();
         data = new List<Walker>();
@@ -76,18 +80,28 @@ public class CrowdSimulator : MonoBehaviour
         dynamicObstaclesRenderTex.Create();
         Matrix4x4 vp = GetVPMatrix();
         crowdSimulationShader.SetFloat("RAY_RESOLUTION", 30.0f);
-        crowdSimulationShader.SetFloat("RAY_ANGLE", 45.0f);
+        crowdSimulationShader.SetFloat("RAY_ANGLE", 30.0f);
         for (int id = 0; id < agents.Count; id++)
         {
             agents[id].Init(id);
             Walker walker = new Walker();
-            walker.orientation = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0, UnityEngine.Random.Range(-1f, 1f)).normalized;
             walker.id = id;
             walker.position = agents[id].transform.position;
-            walker.speed = 3.0f;
             walker.colliderRadius = 1.0f;
             idToController.Add(id, agents[id]);
+
+            if (generateAgentsOnSpawn)
+            {
+                walker.orientation = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0, UnityEngine.Random.Range(-1f, 1f)).normalized;
+                walker.speed = 3.0f;
+            }
+            else
+            {
+                walker.orientation = agents[id].data.orientation;
+                walker.speed = agents[id].data.speed;
+            }
             data.Add(walker);
+
         }
 
         InitRendering();
@@ -145,7 +159,7 @@ public class CrowdSimulator : MonoBehaviour
         obstacleProjectionCamera.gameObject.SetActive(false);
         obstaclesTexture.enableRandomWrite = true;
         obstacleProjectionCamera.targetTexture = obstaclesTexture;
-        debugImg.texture = obstaclesTexture;
+        //debugImg.texture = obstaclesTexture;
         obstacleProjectionCamera.Render();
     }
 
@@ -176,7 +190,7 @@ public class CrowdSimulator : MonoBehaviour
     {
         int moveKernelIndex = crowdSimulationShader.FindKernel("MoveV2");        
         crowdSimulationShader.SetBuffer(moveKernelIndex, "Agents", agentsBuffer);
-        crowdSimulationShader.Dispatch(moveKernelIndex, data.Count / 1024 + data.Count % 1024, 1, 1);
+        crowdSimulationShader.Dispatch(moveKernelIndex, data.Count / 128 + data.Count % 128, 1, 1);
         
     }
     private void RenderWorldStateTex()
