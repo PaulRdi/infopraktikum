@@ -239,7 +239,7 @@ void MoveV2(uint3 id : SV_DispatchThreadID)
 		if (dot(ab, ab) > 4.0)
 			continue;
 		float3 orientationOther = Agents[i].orientation;
-		if (acos(dot(orientationOther, d)) < radians(5.0f))	//if the other agent is travelling in roughly the same direction as we are, igore 
+		if (acos(dot(orientationOther, d)) < radians(30.0f))	//if the other agent is travelling in roughly the same direction as we are, igore 
 			continue;											//since orientation is normalized we dont need to devide by length
 
 			

@@ -47,7 +47,7 @@ public class CrowdSimulator : MonoBehaviour
 {
     // Start is called before the first frame update
 
-
+    [SerializeField] Material[] rndMats;
     [SerializeField] RenderTexture obstaclesTexture;
     [SerializeField] RenderTexture dynamicObstaclesRenderTex;
     [SerializeField] Camera obstacleProjectionCamera;
@@ -87,7 +87,7 @@ public class CrowdSimulator : MonoBehaviour
             Walker walker = new Walker();
             walker.id = id;
             walker.position = agents[id].transform.position;
-            walker.colliderRadius = 1.0f;
+            walker.colliderRadius = 0.4f;
             idToController.Add(id, agents[id]);
 
             if (generateAgentsOnSpawn)
@@ -167,10 +167,12 @@ public class CrowdSimulator : MonoBehaviour
     {
         for (int i = 0; i < numAgents; i++)
         {
-            agents.Add(Instantiate(agentPrefab, new Vector3(
+            AgentController Agent = Instantiate(agentPrefab, new Vector3(
                 UnityEngine.Random.Range(-19f, 19f),
                 0f,
-                UnityEngine.Random.Range(-19f, 19f)), Quaternion.identity).GetComponent<AgentController>());
+                UnityEngine.Random.Range(-19f, 19f)), Quaternion.identity).GetComponent<AgentController>();
+            agents.Add(Agent);
+            Agent.GetComponent<MeshRenderer>().material = rndMats[UnityEngine.Random.Range(0, rndMats.Length)];
         }
     }
 
