@@ -4,13 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Collectiblox.Model.Commands;
+using UnityEngine;
 namespace Collectiblox.Model.Rules
 {
     /// <summary>
     /// Rules change game tate when Commands get sent or executed.
     /// Rules also evaluate game state.
     /// </summary>
-    public abstract class Rule
+    public abstract class Rule : ScriptableObject
     {
         /// <summary>
         /// Is executed before the command gets put on the stack.
@@ -48,7 +49,7 @@ namespace Collectiblox.Model.Rules
         {
             this.active = active;
         }
-        public virtual RulePriority priority => RulePriority.Default;
-
+        public virtual RulePriority priority => _priority;
+        [SerializeField] protected RulePriority _priority;
     }
 }

@@ -4,12 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Collectiblox.Model.Commands;
-
+using UnityEngine;
 namespace Collectiblox.Model.Rules
 {
     /// <summary>
     /// Rule to check mana spending when a card gets played.
     /// </summary>
+    [CreateAssetMenu(fileName = "mana_rule.asset", menuName = "Rules/Mana Rule")]
     public class ManaRule : Rule
     {
         public override void Init()

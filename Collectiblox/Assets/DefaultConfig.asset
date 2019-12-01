@@ -15,3 +15,6 @@ MonoBehaviour:
   _gridSize: {x: 5, y: 5}
   _crystalPosition: {x: 2, y: 2}
   _crystalStrength: 19
+  _rules:
+  - {fileID: 11400000, guid: fb6b0a966295e694c8d788ea82802db1, type: 2}
+  - {fileID: 11400000, guid: 9182654bb34cd364cabd801593219a82, type: 2}

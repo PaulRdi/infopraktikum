@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Collectiblox.Model.Commands;
-
+using UnityEngine;
 namespace Collectiblox.Model.Rules
 {
+    [CreateAssetMenu(fileName = "rule.asset", menuName = "Rules/Creature Play Rule")]
     public class CreaturePlayRule : Rule
     {
         public override RulePriority priority => RulePriority.Early;

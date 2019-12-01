@@ -59,7 +59,7 @@ namespace Collectiblox
             entityToBehaviour = new Dictionary<IFieldEntity, MonoBehaviour>();
             commandExecutionListeners = new List<ICommandExecutionListener>();
             stateOrder = new List<MatchState>();
-            commandManager = new CommandManager();
+            commandManager = new CommandManager(config.rules);
             validator = new Validator();
 
             //Create Model

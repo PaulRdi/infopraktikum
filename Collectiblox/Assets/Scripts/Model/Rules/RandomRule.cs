@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Collectiblox.Model.Commands;
-
+using UnityEngine;
 namespace Collectiblox.Model.Rules
 {
+    [CreateAssetMenu(fileName = "random_rule.asset", menuName = "Rules/Random Rule")]
     public class RandomRule : Rule
     {
         public override void Init()

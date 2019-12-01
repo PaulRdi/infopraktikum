@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using Collectiblox.Model.Rules;
 
 namespace Collectiblox
 {
@@ -16,6 +16,9 @@ namespace Collectiblox
 
         public int crystalStrength => _crystalStrength;
         [SerializeField] int _crystalStrength;
+
+        public Rule[] rules => _rules;
+        [SerializeField] Rule[] _rules;
 
         public static GameConfig current;
     }
