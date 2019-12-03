@@ -19,14 +19,19 @@ namespace Collectiblox.Model.Rules
         public override RuleEvaluationInfo IsCommandExecutable(GameManager gm, ICommand command)
         {
             PlayCardCommandData commandData = command.GetData<PlayCardCommandData>();
+            CardInstance<Monster> monster = null;
 
             if (commandData != null)
             {
-                CardInstance<Monster> monster = commandData.cardInstance.Get<Monster>();
+                monster = commandData.cardInstance.Get<Monster>();
                 if (monster != null &&
                     gm.match.fieldEntities.ContainsKey(commandData.targetTile))
                 {
                     return new RuleEvaluationInfo(false, "Field filled");
+                }
+                else
+                {
+                    return new RuleEvaluationInfo(true, monster);
                 }
             }
             return new RuleEvaluationInfo(true);

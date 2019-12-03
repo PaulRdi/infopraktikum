@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Model
+namespace Collectiblox.Model
 {
     public static class PlayingFieldProcessor
     {
-
     }
 }

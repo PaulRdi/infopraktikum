@@ -16,6 +16,14 @@ namespace Collectiblox.Model
         public Type type => GetType();
 
         public string cardName => name;
+
+        public override string ToString()
+        {
+            return "-- " + cardName + " --\n" +
+                   "Cost: " + cost.ToString() + "\n" +
+                   "Prefab: " + prefab.ToString() + "\n" +
+                   "Type: " + type.ToString() + "\n";
+        }
     }
     public interface ICardData
     {

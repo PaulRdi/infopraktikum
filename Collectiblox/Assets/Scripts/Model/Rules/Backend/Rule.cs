@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Collectiblox.Model.Rules
 {
     /// <summary>
-    /// Rules change game tate when Commands get sent or executed.
+    /// Rules change game state when Commands get sent or executed.
     /// Rules also evaluate game state.
     /// </summary>
     public abstract class Rule : ScriptableObject

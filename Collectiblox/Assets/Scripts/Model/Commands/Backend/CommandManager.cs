@@ -13,14 +13,14 @@ namespace Collectiblox.Model.Commands
         public Stack<ICommand> commandStack;
         
         List<ICommandListener> commandListeners;
-        List<Rule> rules;
+        Rule[] rules;
         Dictionary<CommandType, List<CommandBehaviour>> registeredBehaviours;
 
         public CommandManager(Rule[] rules)
         {
             commandStack = new Stack<ICommand>();
             commandListeners = new List<ICommandListener>();
-            this.rules = new List<Rule>();
+            this.rules = rules;
             registeredBehaviours = new Dictionary<CommandType, List<CommandBehaviour>>();
 
             foreach (CommandBehaviour behaviour in Util.GetEnumerableOfType<CommandBehaviour>())
@@ -30,11 +30,10 @@ namespace Collectiblox.Model.Commands
             }
             foreach (Rule rule in rules)
             {
-                this.rules.Add(rule);
                 rule.Init();
             }
-            this.rules = this.rules.OrderBy(rule => (int)rule.priority).ToList();
-            for (int i =0; i < registeredBehaviours.Count; i++)
+            this.rules = this.rules.OrderBy(rule => (int)rule.priority).ToArray();
+            for (int i = 0; i < registeredBehaviours.Count; i++)
             {
                 CommandType key = registeredBehaviours.ElementAt(i).Key;
                 registeredBehaviours[key] = registeredBehaviours[key].OrderBy(b => (int)b.priority).ToList();

@@ -10,17 +10,20 @@ namespace Collectiblox.Model.Rules
     {
         public bool actionAllowed { get; private set; }
         public string ruleDeniedMessage { get; private set; }
+        public ICardInstance cardInstance { get; private set; }
 
-        public RuleEvaluationInfo(bool actionAllowed, string deniedMessage)
+        public RuleEvaluationInfo(bool actionAllowed, string deniedMessage, ICardInstance cardInstance = null)
         {
             this.actionAllowed = actionAllowed;
             this.ruleDeniedMessage = deniedMessage;
+            this.cardInstance = cardInstance;
         }
 
-        public RuleEvaluationInfo(bool actionAllowed)
+        public RuleEvaluationInfo(bool actionAllowed, ICardInstance cardInstance = null)
         {
             this.actionAllowed = actionAllowed;
             this.ruleDeniedMessage = "";
+            this.cardInstance = cardInstance;
         }
     }
 }

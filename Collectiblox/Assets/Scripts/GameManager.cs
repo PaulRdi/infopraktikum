@@ -177,8 +177,9 @@ namespace Collectiblox
         {
             GameObject prefab = obj.entity.data.prefab;
             GameObject instance = Instantiate(prefab);
-
+            instance.GetComponent<BoardEntity>().Init(obj);
             instance.transform.position = Convert.GridToWorld(playingGridParent.localToWorldMatrix, obj.gridPos);
+
         }
 
 
@@ -189,24 +190,26 @@ namespace Collectiblox
         {
             if (Input.GetKeyDown(KeyCode.F))
             {
+                Vector2Int position = new Vector2Int(
+                            UnityEngine.Random.Range(0, 5),
+                            UnityEngine.Random.Range(0, 5));
                 RuleEvaluationInfo ri = TrySendCommand(new Command<PlayCardCommandData>(
                     CommandType.PlayCard, 
                     new PlayCardCommandData(
                         match.player1Key,
                         match.cardInstances.ElementAt(0).Key,
-                        new Vector2Int(
-                            UnityEngine.Random.Range(0,5), 
-                            UnityEngine.Random.Range(0,5)))));
+                        position)));
 
                 if (!ri.actionAllowed)
+                {
                     Debug.Log(ri.ruleDeniedMessage);
+                }
             }
 
 
             if (validator.isValidated)
             {
-                ICommand cmd;
-                if (commandManager.TryExecuteNextCommand(this, out cmd))
+                if (commandManager.TryExecuteNextCommand(this, out ICommand cmd))
                 {
                     commandExecutionListeners.ForEach(e => e.CommandExecuted(cmd, this));
                 }

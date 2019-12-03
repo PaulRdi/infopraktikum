@@ -46,6 +46,12 @@ namespace Collectiblox.Model
             baseData = Cards.DB[cardData.cardName];
             data = (T)Cards.DB[cardData.cardName];
         }
+
+        public override string ToString()
+        {
+            //todo: implement to string once actual instance data exists.
+            return data.ToString();
+        }
     }
 
     public interface ICardInstance

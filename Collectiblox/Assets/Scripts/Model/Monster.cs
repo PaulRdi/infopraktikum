@@ -20,5 +20,11 @@ namespace Collectiblox.Model {
 		[SerializeField]
 		private int _otherStuff;
 
+
+        public override string ToString()
+        {
+            return base.ToString() + 
+                   "Combat Value: " + combatValue.ToString() + "\n";
+        }
     }
 }

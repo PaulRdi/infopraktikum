@@ -40,6 +40,16 @@ namespace Collectiblox.Model.Commands
             }
             return null;
         }
+        public bool TryGetData<J>(out J data) where J : CommandData
+        {
+            data = null;
+            if (this.data is J)
+            {
+                data = this.data as J;
+                return true;
+            }
+            return false;
+        }
     }
 
     public interface ICommand
@@ -48,6 +58,7 @@ namespace Collectiblox.Model.Commands
         CommandType type { get; }
         Type dataType { get; }
         T GetData<T>() where T : CommandData;
+        bool TryGetData<T>(out T data) where T : CommandData;
         PlayerKey sender { get; }
     }
 }

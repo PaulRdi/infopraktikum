@@ -21,11 +21,15 @@ namespace Collectiblox.Model.Commands
 
         public override void OnSend(GameManager gm, ICommand command)
         {
-            PlayCardCommandData data = command.GetData<PlayCardCommandData>();
-            if (data != null)
+            if (command.TryGetData<PlayCardCommandData>(out PlayCardCommandData data))
             {
                 UnityEngine.Debug.Log(data.cardInstance.cost);
                 gm.match.playerDatas[command.sender].currentMana -= data.cardInstance.cost;
+
+                if (gm.match.playerDatas[command.sender].hand.Contains(data.cardInstance))
+                {
+                    gm.match.playerDatas[command.sender].hand.Remove(data.cardInstance);
+                }
             }
         }
 

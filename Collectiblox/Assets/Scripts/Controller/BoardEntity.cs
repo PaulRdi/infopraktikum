@@ -1,22 +1,24 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using Collectiblox.Model;
 
 namespace Collectiblox.Controller
 {
     public class BoardEntity : MonoBehaviour
     {
-        // Start is called before the first frame update
-        void Start()
-        {
+        IFieldEntity data;
 
+        public void Init(FieldEntity<CardInstance<Monster>> cardInstance)
+        {
+            data = cardInstance;
         }
 
-        // Update is called once per frame
-        void Update()
+        public override string ToString()
         {
-
+            if (data != null)
+                return data.ToString();
+            return "No data.";
         }
     }
 }

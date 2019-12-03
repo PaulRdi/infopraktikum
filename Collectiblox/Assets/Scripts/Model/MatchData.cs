@@ -21,7 +21,9 @@ namespace Collectiblox.Model
 
         Vector2Int gridSize;
 
-        Crystal crystal;
+        public Crystal crystal => _crystal;
+        public Vector2Int crystalPosition;
+        Crystal _crystal;
 
         public MatchState currentState;
 
@@ -64,12 +66,12 @@ namespace Collectiblox.Model
             playerDatas.Add(player1Key, new PlayerData(drawOrderP1, player1Key, 5, 5));
             playerDatas.Add(player2Key, new PlayerData(drawOrderP2, player2Key, 5, 5));
 
-            crystal = new Crystal(crystalStrength);
+            _crystal = new Crystal(crystalStrength);
 
             fieldEntities.Add(
                 crystalPosition,
-                new FieldEntity<Crystal>(crystal, crystalPosition));
-
+                new FieldEntity<Crystal>(_crystal, crystalPosition));
+            this.crystalPosition = crystalPosition;
             currentState = new MatchState(MatchStateType.Idle, player1Key, player2Key);
         }
 
@@ -87,6 +89,39 @@ namespace Collectiblox.Model
             }
             MonsterCreated?.Invoke(entity);
             return entity;
+        }
+        /// <summary>
+        /// Get the strength coming in to one tile for one player!
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="requestingPlayer"></param>
+        /// <returns></returns>
+        public int GetStrengthForPlayerAtPosition(Vector2Int pos, PlayerKey requestingPlayer)
+        {
+            int val = GetStrengthForPlayerAtPositionRecursive(pos, new Vector2Int(-1, 0), requestingPlayer) 
+                    + GetStrengthForPlayerAtPositionRecursive(pos, new Vector2Int(1, 0), requestingPlayer)
+                    + GetStrengthForPlayerAtPositionRecursive(pos, new Vector2Int(0, 1), requestingPlayer)
+                    + GetStrengthForPlayerAtPositionRecursive(pos, new Vector2Int(0, -1), requestingPlayer);
+
+            return val;
+        }
+
+        private int GetStrengthForPlayerAtPositionRecursive(Vector2Int pos, Vector2Int dir, PlayerKey requestingPlayer)
+        {
+            pos += dir;
+            if (!fieldEntities.ContainsKey(pos))
+            {
+                return 0;
+            }
+            IFieldEntity fieldEntity = fieldEntities[pos];
+            if (fieldEntity.TryGetEntity<CardInstance<Monster>>(out CardInstance<Monster> monster))
+            {
+                if (cardInstances[monster] == requestingPlayer)
+                    return GetStrengthForPlayerAtPositionRecursive(pos, dir, requestingPlayer) + monster.data.combatValue;
+                else
+                    return 0;
+            }
+            return 0;
         }
     }
 }

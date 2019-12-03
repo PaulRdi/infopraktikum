@@ -18,6 +18,17 @@ namespace Collectiblox.Model
             return null;
         }
 
+        public bool TryGetEntity<J>(out J entity) where J : class
+        {
+            entity = null;
+            if (this.entity is J)
+            {
+                entity = this.entity as J;
+                return true;
+            }
+            return false;
+        }
+
         public Vector2Int gridPos { get; private set; }
 
         public Type type => typeof(T);
@@ -27,11 +38,18 @@ namespace Collectiblox.Model
             this.entity = entity;
             this.gridPos = position;
         }
+
+        public override string ToString()
+        {
+            return "Position: " + gridPos + "\n" + entity.ToString();
+        }
     }
     public interface IFieldEntity
     {
         Vector2Int gridPos { get; }
         Type type { get; }
         T GetEntity<T>() where T : class;
+        bool TryGetEntity<T>(out T entity) where T : class;
+        string ToString();
     }
 }
