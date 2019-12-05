@@ -17,11 +17,31 @@ namespace Collectiblox.Model
                 return data as J;
             return null;
         }
+        public bool TryGetData<J>(out J data) where J : CardData
+        {
+            data = null;
+            if (this.data is J)
+            {
+                data = this.data as J;
+                return true;
+            }
+            return false;
+        }
         public CardInstance<J> Get<J>() where J : CardData
         {
             if (this is CardInstance<J>)
                 return this as CardInstance<J>;
             return null;
+        }
+        public bool TryGetStrongType<J>(out CardInstance<J> data) where J : CardData
+        {
+            data = null;
+            if (this is CardInstance<J>)
+            {
+                data = this as CardInstance<J>;
+                return true;
+            }
+            return false;
         }
         /// <summary>
         /// Modified cost for this card instance.
@@ -58,6 +78,8 @@ namespace Collectiblox.Model
     {
         ICardData baseData { get; }
         J GetData<J>() where J : CardData;
+        bool TryGetData<J>(out J data) where J : CardData;
+        bool TryGetStrongType<J>(out CardInstance<J> data) where J : CardData;
         CardInstance<J> Get<J>() where J : CardData;
         int cost { get; }
     }

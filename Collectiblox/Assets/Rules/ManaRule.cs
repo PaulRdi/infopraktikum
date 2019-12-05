@@ -25,9 +25,7 @@ namespace Collectiblox.Model.Rules
 
         public override RuleEvaluationInfo IsCommandSendable(GameManager gm, ICommand command)
         {
-            PlayCardCommandData data = command.GetData<PlayCardCommandData>();
-
-            if (data != null)
+            if (command.TryGetData<PlayCardCommandData>(out PlayCardCommandData data))
             {
                 if (gm.match.playerDatas[data.sender].currentMana < data.cardInstance.cost)
                     return new RuleEvaluationInfo(false, "Not enough Mana!");

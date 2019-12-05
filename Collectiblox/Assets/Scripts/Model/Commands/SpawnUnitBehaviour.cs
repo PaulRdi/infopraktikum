@@ -21,8 +21,7 @@ namespace Collectiblox.Model.Commands
             PlayCardCommandData data = command.GetData<PlayCardCommandData>();
             if (data == null)
                 return;
-            CardInstance<Monster> monster = data.cardInstance.Get<Monster>();
-            if (monster != null)
+            if (data.cardInstance.TryGetStrongType<Monster>(out CardInstance<Monster> monster))
             {
                 gm.match.SpawnMonster(monster, data.targetTile);
             }  
