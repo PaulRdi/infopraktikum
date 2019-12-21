@@ -21,12 +21,9 @@ namespace Collectiblox.Debugging
 
         public void CommandExecuted(ICommand command, GameManager gm)
         {
-            GameManager.instance.validator.AddValidationTarget(this);
-            var cmdData = command.GetData<PlayCardCommandData>();
-
-            if (cmdData != null &&
-                cmdData.cardInstance.Get<Monster>() != null)
+            if (command.TryGetData<PlayCardCommandData>(out PlayCardCommandData cmdData))
             {
+                GameManager.instance.validator.AddValidationTarget(this);
                 Vector3 pos = Convert.GridToWorld(gm.playingGridParent.localToWorldMatrix, cmdData.targetTile);
                 ParticleSystem ps = Instantiate(particles, pos, Quaternion.identity);
                 systems.Add(ps.gameObject);

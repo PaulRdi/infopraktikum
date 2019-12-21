@@ -40,6 +40,7 @@ namespace Collectiblox
         public int currentStateOrderIndex;
         public CommandManager commandManager;
         public Validator validator;
+        public RequestManager requestManager;
 
         public RuleEvaluationInfo TrySendCommand(ICommand command)
         {
@@ -75,6 +76,10 @@ namespace Collectiblox
                 config.crystalPosition,
                 config.crystalStrength);
 
+#if NETWORKING_SERVER
+#else
+            requestManager = new RequestManager(match);
+#endif
             SetupMatchStates();
 
             //Create View
@@ -176,14 +181,14 @@ namespace Collectiblox
                     match.player1Key,
                     match.player2Key));
         }
-        #endregion
+#endregion
 
         private void Match_MonsterCreated(FieldEntity<CardInstance<Monster>> obj)
         {
             GameObject prefab = obj.entity.data.prefab;
             GameObject instance = Instantiate(prefab);
             instance.GetComponent<BoardEntity>().Init(obj);
-            //Todo: Command stack hangs if card play  was not successful...
+            //Todo: Command stack hangs if card play  was not successful... -> fixed but no stuff
             instance.transform.position = Convert.GridToWorld(playingGridParent.localToWorldMatrix, obj.gridPos);
 
         }
@@ -193,17 +198,7 @@ namespace Collectiblox
             RuleEvaluationInfo ri = default(RuleEvaluationInfo);
             if (Input.GetKeyDown(KeyCode.F))
             {
-                Vector2Int position = new Vector2Int(
-                            UnityEngine.Random.Range(0, 5),
-                            UnityEngine.Random.Range(0, 5));
-                ri = TrySendCommand(new Command<PlayCardCommandData>(
-                    CommandType.PlayCard, 
-                    new PlayCardCommandData(
-                        match.player1Key,
-                        match.cardInstances.ElementAt(0).Key,
-                        position)));
-
-               
+                new HandRequest(match.player1Key).Start(PlayFirstCardFromHand);               
             }
             else if (Input.GetKeyDown(KeyCode.D))
             {
@@ -211,6 +206,9 @@ namespace Collectiblox
                     CommandType.DrawCardFromDeck,
                     new DrawCardCommandData(
                         match.player1Key)));
+
+                HandRequest handRequest = new HandRequest(match.player1Key);
+                handRequest.Start(DebugHand);
             }
             if (ri != null &&
                 !ri.actionAllowed)
@@ -229,6 +227,44 @@ namespace Collectiblox
                 }
             }
         }
+
+        private void PlayFirstCardFromHand(List<ICardInstance> obj)
+        {
+            RuleEvaluationInfo ri = default(RuleEvaluationInfo);
+            if (obj.Count == 0)
+            {
+                Debug.Log("request returned no cards in hand");
+                return;
+            }
+
+            Vector2Int position = new Vector2Int(
+                            UnityEngine.Random.Range(0, 5),
+                            UnityEngine.Random.Range(0, 5));
+            ri = TrySendCommand(new Command<PlayCardCommandData>(
+                CommandType.PlayCard,
+                new PlayCardCommandData(
+                    match.player1Key,
+                    obj[0],
+                    position)));
+
+            if (ri != null &&
+                !ri.actionAllowed)
+            {
+                if (ri.cardInstance == null)
+                    Debug.Log(ri.ruleDeniedMessage);
+                else
+                    Debug.Log(ri.ruleDeniedMessage + "\n" + ri.cardInstance.ToString());
+            }
+        }
+
+        private void DebugHand(List<ICardInstance> obj)
+        {
+            foreach(ICardInstance i in obj)
+            {
+                Debug.Log(i.ToString());
+            }
+        }
+
         private void Awake()
         {
             Init();
