@@ -23,8 +23,10 @@ namespace Collectiblox.Model.Commands
         {
             if (command.TryGetData<DrawCardCommandData>(out DrawCardCommandData data))
             {
-                ICardInstance inst = gm.match.playerDatas[data.sender].drawOrder.DrawNext();
-                gm.match.playerDatas[data.sender].hand.Add(inst);
+                if (gm.match.playerDatas[data.sender].drawOrder.TryDraw(out ICardInstance inst))
+                {
+                    gm.match.playerDatas[data.sender].hand.Add(inst);
+                }
             }
         }
 
