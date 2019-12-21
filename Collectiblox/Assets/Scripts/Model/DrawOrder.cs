@@ -11,11 +11,13 @@ namespace Collectiblox.Model
     {
         int seed;
         int currRandom;
-        public List<ICardInstance> drawOrder;
+        List<ICardInstance> drawOrder;
         /// <summary>
         /// The order of cards the drawOrder originally had after the constructor was called.
         /// </summary>
         public List<ICardInstance> ogOrder;
+
+        public int Count => drawOrder.Count;
 
         public DrawOrder (List<ICardInstance> cards)
         {
@@ -37,6 +39,22 @@ namespace Collectiblox.Model
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Gets the first card in the DrawOrder and removes it from the DrawOrder.
+        /// Will throw NullReferenceException if DrawOrder is null or empty.
+        /// </summary>
+        /// <returns></returns>
+        public ICardInstance DrawNext()
+        {
+            if (drawOrder == null ||
+                drawOrder.Count <= 0)
+                throw new System.NullReferenceException("Tried to draw a card but no cards were in DrawOrder");
+
+            ICardInstance inst = drawOrder[0];
+            drawOrder.RemoveAt(0);
+            return inst;
         }
 
         //fisher yates shuffle: https://pdfs.semanticscholar.org/d9f6/65a955a2706c7dd3d4fe47e959f0d118932b.pdf

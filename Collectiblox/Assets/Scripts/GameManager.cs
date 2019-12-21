@@ -46,6 +46,11 @@ namespace Collectiblox
             return commandManager.TrySendCommand(this, command);
         }
 
+        private void OnDestroy()
+        {
+            match.MonsterCreated -= Match_MonsterCreated;
+        }
+
         #region Initialization
         private void Init()
         {
@@ -178,34 +183,43 @@ namespace Collectiblox
             GameObject prefab = obj.entity.data.prefab;
             GameObject instance = Instantiate(prefab);
             instance.GetComponent<BoardEntity>().Init(obj);
+            //Todo: Command stack hangs if card play  was not successful...
             instance.transform.position = Convert.GridToWorld(playingGridParent.localToWorldMatrix, obj.gridPos);
 
         }
 
-
-
-
-
         void Update()
         {
+            RuleEvaluationInfo ri = default(RuleEvaluationInfo);
             if (Input.GetKeyDown(KeyCode.F))
             {
                 Vector2Int position = new Vector2Int(
                             UnityEngine.Random.Range(0, 5),
                             UnityEngine.Random.Range(0, 5));
-                RuleEvaluationInfo ri = TrySendCommand(new Command<PlayCardCommandData>(
+                ri = TrySendCommand(new Command<PlayCardCommandData>(
                     CommandType.PlayCard, 
                     new PlayCardCommandData(
                         match.player1Key,
                         match.cardInstances.ElementAt(0).Key,
                         position)));
 
-                if (!ri.actionAllowed)
-                {
-                    Debug.Log(ri.ruleDeniedMessage);
-                }
+               
             }
-
+            else if (Input.GetKeyDown(KeyCode.D))
+            {
+                ri = TrySendCommand(new Command<DrawCardCommandData>(
+                    CommandType.DrawCardFromDeck,
+                    new DrawCardCommandData(
+                        match.player1Key)));
+            }
+            if (ri != null &&
+                !ri.actionAllowed)
+            {
+                if (ri.cardInstance == null)
+                    Debug.Log(ri.ruleDeniedMessage);
+                else
+                    Debug.Log(ri.ruleDeniedMessage + "\n" + ri.cardInstance.ToString());
+            }
 
             if (validator.isValidated)
             {

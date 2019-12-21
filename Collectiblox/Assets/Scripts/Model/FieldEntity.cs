@@ -33,10 +33,11 @@ namespace Collectiblox.Model
 
         public Type type => typeof(T);
 
-        public FieldEntity(T entity, Vector2Int position)
+        public FieldEntity(MatchData world, T entity, Vector2Int position)
         {
             this.entity = entity;
             this.gridPos = position;
+            world.fieldEntities.Add(position, this);
         }
 
         public override string ToString()

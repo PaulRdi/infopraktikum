@@ -23,7 +23,7 @@ namespace Collectiblox.Model.Commands
                 return;
             if (data.cardInstance.TryGetStrongType<Monster>(out CardInstance<Monster> monster))
             {
-                gm.match.SpawnMonster(monster, data.targetTile);
+                gm.match.SpawnMonster(monster, data.targetTile, data.sender);
             }  
         }
 

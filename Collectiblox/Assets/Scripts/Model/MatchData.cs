@@ -68,9 +68,7 @@ namespace Collectiblox.Model
 
             _crystal = new Crystal(crystalStrength);
 
-            fieldEntities.Add(
-                crystalPosition,
-                new FieldEntity<Crystal>(_crystal, crystalPosition));
+            new FieldEntity<Crystal>(this, _crystal, crystalPosition);
             this.crystalPosition = crystalPosition;
             currentState = new MatchState(MatchStateType.Idle, player1Key, player2Key);
         }
@@ -82,7 +80,7 @@ namespace Collectiblox.Model
             Vector2Int position, 
             PlayerKey spawningPlayer = null)
         {
-            FieldEntity<CardInstance<Monster>> entity = new FieldEntity<CardInstance<Monster>>(monster, position);
+            FieldEntity<CardInstance<Monster>> entity = new FieldEntity<CardInstance<Monster>>(this, monster, position);
             if (spawningPlayer != null)
             {
                 playerDatas[spawningPlayer].fieldEntities.Add(entity);

@@ -10,6 +10,7 @@ namespace Collectiblox.Model.Commands
     {
         None,
         EndPhase,
-        PlayCard
+        PlayCard,
+        DrawCardFromDeck
     }
 }

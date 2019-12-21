@@ -6,12 +6,18 @@ using System.Threading.Tasks;
 
 namespace Collectiblox.Model.Rules
 {
-    public struct RuleEvaluationInfo
+    public class RuleEvaluationInfo
     {
         public bool actionAllowed { get; private set; }
         public string ruleDeniedMessage { get; private set; }
         public ICardInstance cardInstance { get; private set; }
 
+        public RuleEvaluationInfo()
+        {
+            actionAllowed = true;
+            ruleDeniedMessage = "NULL";
+            cardInstance = null;
+        }
         public RuleEvaluationInfo(bool actionAllowed, string deniedMessage, ICardInstance cardInstance = null)
         {
             this.actionAllowed = actionAllowed;
