@@ -29,9 +29,17 @@ namespace Collectiblox.Model.Commands
                 if (gm.match.playerDatas[command.sender].hand.Contains(data.cardInstance))
                 {
                     gm.match.playerDatas[command.sender].hand.Remove(data.cardInstance);
+                    PlayCard(gm.match, data);
                 }
             }
         }
 
+        private void PlayCard(MatchData match, PlayCardCommandData commandData)
+        {
+            if (commandData.cardInstance.TryGetStrongType<Monster>(out CardInstance<Monster> monster))
+            {
+                match.SpawnMonster(monster, commandData.targetTile, commandData.sender);
+            }
+        }
     }
 }

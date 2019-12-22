@@ -28,7 +28,7 @@ namespace Collectiblox
         [SerializeField] Decklist player2Decklist;
 
         [SerializeField] public Transform playingGridParent;
-        [SerializeField] GameObject playingGridPrefab;
+        [SerializeField] GameObject gridCellPrefab;
         [SerializeField] GameObject crystalPrefab;
 
         [SerializeField] GameConfig config;
@@ -88,7 +88,7 @@ namespace Collectiblox
             {
                 for (int x = 0; x < config.gridSize.x; x++)
                 {
-                    go = Instantiate(playingGridPrefab, playingGridParent);
+                    go = Instantiate(gridCellPrefab, playingGridParent);
                     go.transform.localPosition = new Vector3(x, 0, y);
                     go.GetComponentInChildren<GridCellController>().Init(new Vector2Int(x, y));
                 }
@@ -188,36 +188,11 @@ namespace Collectiblox
             GameObject prefab = obj.entity.data.prefab;
             GameObject instance = Instantiate(prefab);
             instance.GetComponent<BoardEntity>().Init(obj);
-            //Todo: Command stack hangs if card play  was not successful... -> fixed but no stuff
-            instance.transform.position = Convert.GridToWorld(playingGridParent.localToWorldMatrix, obj.gridPos);
-
+            instance.transform.position = Convert.GridToWorld(playingGridParent, obj.gridPos);
         }
 
         void Update()
         {
-            RuleEvaluationInfo ri = default(RuleEvaluationInfo);
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                new HandRequest(match.player1Key).Start(PlayFirstCardFromHand);               
-            }
-            else if (Input.GetKeyDown(KeyCode.D))
-            {
-                ri = TrySendCommand(new Command<DrawCardCommandData>(
-                    CommandType.DrawCardFromDeck,
-                    new DrawCardCommandData(
-                        match.player1Key)));
-
-                HandRequest handRequest = new HandRequest(match.player1Key);
-                handRequest.Start(DebugHand);
-            }
-            if (ri != null &&
-                !ri.actionAllowed)
-            {
-                if (ri.cardInstance == null)
-                    Debug.Log(ri.ruleDeniedMessage);
-                else
-                    Debug.Log(ri.ruleDeniedMessage + "\n" + ri.cardInstance.ToString());
-            }
 
             if (validator.isValidated)
             {
@@ -226,48 +201,28 @@ namespace Collectiblox
                     commandExecutionListeners.ForEach(e => e.CommandExecuted(cmd, this));
                 }
             }
-        }
-
-        private void PlayFirstCardFromHand(List<ICardInstance> obj)
-        {
-            RuleEvaluationInfo ri = default(RuleEvaluationInfo);
-            if (obj.Count == 0)
-            {
-                Debug.Log("request returned no cards in hand");
-                return;
-            }
-
-            Vector2Int position = new Vector2Int(
-                            UnityEngine.Random.Range(0, 5),
-                            UnityEngine.Random.Range(0, 5));
-            ri = TrySendCommand(new Command<PlayCardCommandData>(
-                CommandType.PlayCard,
-                new PlayCardCommandData(
-                    match.player1Key,
-                    obj[0],
-                    position)));
-
-            if (ri != null &&
-                !ri.actionAllowed)
-            {
-                if (ri.cardInstance == null)
-                    Debug.Log(ri.ruleDeniedMessage);
-                else
-                    Debug.Log(ri.ruleDeniedMessage + "\n" + ri.cardInstance.ToString());
-            }
-        }
-
-        private void DebugHand(List<ICardInstance> obj)
-        {
-            foreach(ICardInstance i in obj)
-            {
-                Debug.Log(i.ToString());
-            }
-        }
+        }     
 
         private void Awake()
         {
             Init();
+        }
+
+        public static Vector3 QuantizeToGrid(Vector3 position)
+        {
+            Transform og = instance.playingGridParent;
+            Vector3 relativePos = position - og.position;
+            Vector3 gridCellSize = instance.gridCellPrefab.transform.lossyScale;
+
+
+            relativePos = new Vector3(
+                gridCellSize.x == 0 ? 1.0f : Mathf.Floor((relativePos.x + gridCellSize.x * .5f) / gridCellSize.x),
+                gridCellSize.y == 0 ? 1.0f : Mathf.Floor((relativePos.y + gridCellSize.y * .5f) / gridCellSize.y),
+                gridCellSize.z == 0 ? 1.0f : Mathf.Floor((relativePos.z + gridCellSize.z * .5f) / gridCellSize.z));
+           // relativePos *= 2;
+            relativePos.y = position.y;
+
+            return relativePos;
         }
     }
 }

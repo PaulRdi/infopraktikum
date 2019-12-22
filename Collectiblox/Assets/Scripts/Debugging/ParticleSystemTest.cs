@@ -21,10 +21,11 @@ namespace Collectiblox.Debugging
 
         public void CommandExecuted(ICommand command, GameManager gm)
         {
-            if (command.TryGetData<PlayCardCommandData>(out PlayCardCommandData cmdData))
+            if (command.TryGetData<PlayCardCommandData>(out PlayCardCommandData cmdData) &&
+                cmdData.cardInstance.TryGetStrongType<Monster>(out CardInstance<Monster> monster))
             {
                 GameManager.instance.validator.AddValidationTarget(this);
-                Vector3 pos = Convert.GridToWorld(gm.playingGridParent.localToWorldMatrix, cmdData.targetTile);
+                Vector3 pos = Convert.GridToWorld(gm.playingGridParent, cmdData.targetTile);
                 ParticleSystem ps = Instantiate(particles, pos, Quaternion.identity);
                 systems.Add(ps.gameObject);
                 ps.GetComponent<DestroyNotifier>().Destroyed += ParticleSystemTest_Destroyed;
