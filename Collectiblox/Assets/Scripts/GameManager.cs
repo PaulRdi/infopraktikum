@@ -36,7 +36,8 @@ namespace Collectiblox
         public MatchData match;
         public Dictionary<IFieldEntity, MonoBehaviour> entityToBehaviour;
         public List<ICommandExecutionListener> commandExecutionListeners;
-        public List<MatchState> stateOrder;
+        public List<MatchState> stateOrder;        
+
         public int currentStateOrderIndex;
         public CommandManager commandManager;
         public Validator validator;
@@ -223,6 +224,18 @@ namespace Collectiblox
             relativePos.y = position.y;
 
             return relativePos;
+        }
+
+        public static Vector3Int WorldToGrid(Vector3 position)
+        {
+            Transform og = instance.playingGridParent;
+            Vector3 relativePos = position - og.position;
+            Vector3 gridCellSize = instance.gridCellPrefab.transform.lossyScale;
+
+            return new Vector3Int(
+                gridCellSize.x == 0 ? 1 : (int)Math.Floor((relativePos.x + gridCellSize.x * .5f) / gridCellSize.x),
+                gridCellSize.y == 0 ? 1 : (int)Math.Floor((relativePos.y + gridCellSize.y * .5f) / gridCellSize.y),
+                gridCellSize.z == 0 ? 1 : (int)Math.Floor((relativePos.z + gridCellSize.z * .5f) / gridCellSize.z));
         }
     }
 }

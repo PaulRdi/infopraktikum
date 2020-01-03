@@ -4,21 +4,24 @@ using UnityEngine;
 
 namespace Collectiblox.View
 {
-    public class IdleListenForInteraction : StateMachineBehaviour
+    public class PickTileInteraction : StateMachineBehaviour
     {
         CursorController cursor;
         override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
             cursor = animator.GetComponentInChildren<CursorController>(true);
-            cursor.gameObject.SetActive(false);
+            cursor.gameObject.SetActive(true);
         }
 
         override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
-            if (Input.GetKeyDown(KeyCode.Q))
+            cursor.UpdateCursorPosition();
+            if (Input.GetMouseButtonDown(0))
             {
-                animator.SetBool("PickTile", true);
+                cursor.Click();
+                animator.SetBool("PickTile", false);
             }
+
         }
 
         override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
